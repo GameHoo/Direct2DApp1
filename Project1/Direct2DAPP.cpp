@@ -118,7 +118,7 @@ HRESULT Direct2DApp::CreateDeviceIndependentResources()
 {
 	HRESULT hr = S_OK;
 
-	// Create a Direct2D factory.
+	//创建工厂
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,&m_pDirect2dFactory);
 
 	return hr;
@@ -254,15 +254,15 @@ HRESULT Direct2DApp::OnRender()
 	if (SUCCEEDED(hr))
 	{
 		m_pRenderTarget->BeginDraw();
-
-		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+		//这把主窗口旋转了 好炫酷
+		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(45.f));
 
 		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 		D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
 		// Draw a grid background.
 		int width = static_cast<int>(rtSize.width);
 		int height = static_cast<int>(rtSize.height);
-
+		//画竖线
 		for (int x = 0; x < width; x += 10)
 		{
 			m_pRenderTarget->DrawLine(
@@ -272,7 +272,7 @@ HRESULT Direct2DApp::OnRender()
 				0.5f
 				);
 		}
-
+		//画横线
 		for (int y = 0; y < height; y += 10)
 		{
 			m_pRenderTarget->DrawLine(
@@ -282,7 +282,7 @@ HRESULT Direct2DApp::OnRender()
 				0.5f
 				);
 		}
-		// Draw two rectangles.
+		// 画两个矩形
 		D2D1_RECT_F rectangle1 = D2D1::RectF(
 			rtSize.width / 2 - 50.0f,
 			rtSize.height / 2 - 50.0f,

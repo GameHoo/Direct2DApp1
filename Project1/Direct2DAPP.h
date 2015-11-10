@@ -42,10 +42,15 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 class Direct2DApp
 {
 private:
+	//窗口句柄
 	HWND m_hwnd;
+	//使用 ID2D1Factory 可创建 Direct2D 资源
 	ID2D1Factory* m_pDirect2dFactory;
+	//使用呈现器目标绘制各种形状
 	ID2D1HwndRenderTarget* m_pRenderTarget;
+	//灰色画笔
 	ID2D1SolidColorBrush* m_pLightSlateGrayBrush;
+	//画笔
 	ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
 public:
 	Direct2DApp();
@@ -72,7 +77,7 @@ private:
 	//绘制内容
 	HRESULT OnRender();
 
-	//调整目标窗口大小
+	//窗口大小被改变
 	void OnResize(
 		UINT width,
 		UINT height
