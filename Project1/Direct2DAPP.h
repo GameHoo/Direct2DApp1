@@ -10,10 +10,12 @@
 #include <math.h>
 
 #include <d2d1.h>
+#pragma comment(lib,"d2d1.lib")
 #include <d2d1helper.h>
 #include <dwrite.h>
+#pragma comment(lib,"dwrite.lib")
 #include <wincodec.h>
-
+#pragma comment(lib,"windowscodecs.lib")
 using namespace std;
 template<class Interface>
 inline void SafeRelease(Interface **ppInterfaceToRelease)
