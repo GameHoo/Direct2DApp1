@@ -39,36 +39,44 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 class Direct2DApp
 {
+private:
+	HWND m_hwnd;
+	ID2D1Factory* m_pDirect2dFactory;
+	ID2D1HwndRenderTarget* m_pRenderTarget;
+	ID2D1SolidColorBrush* m_pLightSlateGrayBrush;
+	ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
 public:
 	Direct2DApp();
+	//释放资源
 	~Direct2DApp();
 
-	// Register the window class and call methods for instantiating drawing resources
+	//初始化窗口
 	HRESULT Initialize();
+	
 
-	// Process and dispatch messages
+	//消息循环
 	void RunMessageLoop();
 
 private:
-	// Initialize device-independent resources.
+	//初始化与设备无关资源
 	HRESULT CreateDeviceIndependentResources();
 
-	// Initialize device-dependent resources.
+	//初始化与设备有关资源
 	HRESULT CreateDeviceResources();
 
-	// Release device-dependent resource.
+	//释放设备资源
 	void DiscardDeviceResources();
 
-	// Draw content.
+	//绘制内容
 	HRESULT OnRender();
 
-	// Resize the render target.
+	//调整目标窗口大小
 	void OnResize(
 		UINT width,
 		UINT height
 		);
 
-	// The windows procedure.
+	//窗口循环
 	static LRESULT CALLBACK WndProc(
 		HWND hWnd,
 		UINT message,

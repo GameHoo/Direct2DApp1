@@ -1,13 +1,10 @@
-// in/out
 #include<iostream>
 #include<stdio.h>
+#include"Direct2DApp.h"
 int main()
 {
-	int *p, a;
-	a = 5;
-	p = &a;
-	printf("&p=%x &a=%x", &p, &a);
+	Direct2DApp App;
 	
-	getchar();
+
 	return 0;
 }
