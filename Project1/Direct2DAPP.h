@@ -14,8 +14,8 @@
 #include <d2d1helper.h>
 #include <dwrite.h>
 #pragma comment(lib,"dwrite.lib")
-#include <wincodec.h>
-#pragma comment(lib,"windowscodecs.lib")
+//#include <wincodec.h>
+
 using namespace std;
 template<class Interface>
 inline void SafeRelease(Interface **ppInterfaceToRelease)
@@ -63,7 +63,7 @@ public:
 
 	//消息循环
 	void RunMessageLoop();
-
+	
 private:
 	//初始化与设备无关资源
 	HRESULT CreateDeviceIndependentResources();

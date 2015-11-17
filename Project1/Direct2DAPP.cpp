@@ -62,6 +62,7 @@ HRESULT Direct2DApp::Initialize()
 
 
 		// Create the window.
+
 		m_hwnd = CreateWindow(
 			L"D2DDemoApp",
 			L"Direct2D Demo App",
@@ -223,7 +224,7 @@ LRESULT CALLBACK Direct2DApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			case WM_PAINT:
 			{
 				pDemoApp->OnRender();
-				ValidateRect(hwnd, NULL);
+				ValidateRect(hwnd, nullptr);
 			}
 			result = 0;
 			wasHandled = true;
@@ -255,7 +256,9 @@ HRESULT Direct2DApp::OnRender()
 	{
 		m_pRenderTarget->BeginDraw();
 		//这把主窗口旋转了 好炫酷
-		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(45.f));
+		static int i = 1;
+		i = 360 % (i+45) + 1;
+		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(static_cast<float>(i)));
 
 		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 		D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
