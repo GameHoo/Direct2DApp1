@@ -12,6 +12,7 @@ private:
 	HWND m_hwnd=nullptr;
 	//使用 ID2D1Factory 可创建 Direct2D 资源
 	ID2D1Factory* m_pDirect2dFactory=nullptr;
+	
 	//使用呈现器目标绘制各种形状
 	ID2D1HwndRenderTarget* m_pRenderTarget = nullptr;
 	
@@ -19,7 +20,7 @@ private:
 	void CreateDeviceIndependentResources();
 
 	//初始化与设备有关资源
-	void CreateDeviceResources(HWND hwnd);
+	void CreateDeviceResources();
 
 	//释放设备资源
 	void DiscardDeviceResources();
@@ -44,7 +45,7 @@ public:
 	{
 		m_hwnd = hwnd;
 		CreateDeviceIndependentResources();
-		CreateDeviceResources(hwnd);
+		CreateDeviceResources();
 	}
 	void* Get_Factory()
 	{

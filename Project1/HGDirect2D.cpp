@@ -3,14 +3,15 @@ void HGDirect2D::CreateDeviceIndependentResources()
 {
 	//创建工厂
 	D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pDirect2dFactory);
+
 }
-void HGDirect2D::CreateDeviceResources(HWND hwnd)
+void HGDirect2D::CreateDeviceResources()
 {
 	HRESULT hr = S_OK;
 	if (!m_pRenderTarget)
 	{
 		RECT rc;
-		GetClientRect(hwnd, &rc);
+		GetClientRect(m_hwnd, &rc);
 
 		D2D1_SIZE_U size = D2D1::SizeU(
 			rc.right - rc.left,
@@ -20,7 +21,7 @@ void HGDirect2D::CreateDeviceResources(HWND hwnd)
 		// Create a Direct2D render target.
 		hr = m_pDirect2dFactory->CreateHwndRenderTarget(
 			D2D1::RenderTargetProperties(),
-			D2D1::HwndRenderTargetProperties(hwnd, size),
+			D2D1::HwndRenderTargetProperties(m_hwnd, size),
 			&m_pRenderTarget
 			);
 

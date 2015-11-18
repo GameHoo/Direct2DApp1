@@ -8,8 +8,10 @@ HGWindow::~HGWindow()
 	
 }
 
-void HGWindow::HG_Init_Window(LPCWSTR title, WNDPROC WndProc, HINSTANCE hInstance, int nCmdShow)
+void HGWindow::HG_Init_Window(LPCWSTR title, WNDPROC WndProc, HINSTANCE hInstance, int nCmdShow,int width,int height)
 {
+	m_Width = width;
+	m_Height = height;
 	WNDCLASSW wc;
 
 	wc.style = CS_HREDRAW | CS_VREDRAW;
