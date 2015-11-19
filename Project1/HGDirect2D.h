@@ -1,3 +1,7 @@
+/*
+创建D2D需要的各种资源
+ID2D1Factory RenderTarget
+*/
 #pragma once
 #include<Windows.h>
 #include<d2d1.h>
@@ -12,7 +16,10 @@ private:
 	HWND m_hwnd=nullptr;
 	//使用 ID2D1Factory 可创建 Direct2D 资源
 	ID2D1Factory* m_pDirect2dFactory=nullptr;
-	
+	//IDWriteFactory 创建 DirectWrite 资源
+	IDWriteFactory* m_WriteFactory = nullptr;
+	//TextFormat
+	IDWriteTextFormat * m_TextFormat = nullptr;
 	//使用呈现器目标绘制各种形状
 	ID2D1HwndRenderTarget* m_pRenderTarget = nullptr;
 	
@@ -22,14 +29,16 @@ private:
 	//初始化与设备有关资源
 	void CreateDeviceResources();
 
-	//释放设备资源
-	void DiscardDeviceResources();
+
 public:
 	HGDirect2D()
 	{}
 	~HGDirect2D()
 	{
-		DiscardDeviceResources();
+		SafeRelease(&m_pRenderTarget);
+		SafeRelease(&m_pDirect2dFactory);
+		SafeRelease(&m_WriteFactory);
+		SafeRelease(&m_TextFormat);
 	}
 	template<class Interface>
 	inline void SafeRelease(Interface **ppInterfaceToRelease)
@@ -47,7 +56,7 @@ public:
 		CreateDeviceIndependentResources();
 		CreateDeviceResources();
 	}
-	void* Get_Factory()
+	ID2D1Factory* Get_Factory()
 	{
 		if(m_pDirect2dFactory==nullptr)
 		{
@@ -55,12 +64,28 @@ public:
 		}
 		return m_pDirect2dFactory;
 	}
-	void* Get_RenderTarget()
+	ID2D1RenderTarget* Get_RenderTarget()
 	{
 		if (m_pRenderTarget == nullptr)
 		{
 			throw(L"m_pRenderTarget == nullptr");
 		}
 		return m_pRenderTarget;
+	}
+	IDWriteFactory* Get_WriteFactory()
+	{
+		if (m_WriteFactory == nullptr)
+		{
+		throw(L"m_WriteFactory==nullptr");
+		}
+		return m_WriteFactory;
+	}
+	IDWriteTextFormat* Get_WriteTextFormat()
+	{
+		if (m_TextFormat == nullptr)
+		{
+			throw(L"m_TextFormat==nullptr");
+		}
+		return m_TextFormat;
 	}
 };

@@ -24,12 +24,21 @@
     <ClCompile Include="HGDirect2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HGInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HGDirect2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HGWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HGInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Spirit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,6 +2,7 @@
 #include<stdio.h>
 #include"HGWindow.h"
 #include "HGDirect2D.h"
+#include "HGInput.h"
 #include<Windows.h>
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void Render();
@@ -9,6 +10,7 @@ int width = 800;
 int height = 600;
 HGWindow theWindow;
 HGDirect2D theDirect2D;
+HGInput theInput;
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -16,7 +18,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
 	
 	theWindow.HG_Init_Window(L"打飞机", WndProc, hInstance, nCmdShow,width,height);
-
+	theDirect2D.Init(theWindow.getHwnd());
+	theInput.init(hInstance, theWindow.getHwnd());
 	MSG msg;
 	while (true)
 	{
@@ -36,25 +39,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 void Render()
 {
-	theDirect2D.Init(theWindow.getHwnd());
+
 	ID2D1RenderTarget* RenderTarget =static_cast<ID2D1RenderTarget*>( theDirect2D.Get_RenderTarget());
-	IDWriteFactory* WriteFactory;
 	ID2D1SolidColorBrush *brush1;
-	IDWriteTextFormat * TextFormat;
-	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory),
-		reinterpret_cast<IUnknown**>(&WriteFactory));
-	WriteFactory->CreateTextFormat(
-		L"Gabriola",                // Font family name.
-		NULL,                       // Font collection (NULL sets it to use the system font collection).
-		DWRITE_FONT_WEIGHT_REGULAR,
-		DWRITE_FONT_STYLE_NORMAL,
-		DWRITE_FONT_STRETCH_NORMAL,
-		72.0f,
-		L"en-us",
-		&TextFormat
-		);
-	TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-	TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 	RECT rc;
 	GetClientRect(theWindow.getHwnd(), &rc);
 
@@ -73,13 +60,27 @@ void Render()
 
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
-	RenderTarget->DrawTextW(
-		L"Hello World",
-		strlen("Hello World"),
-		TextFormat,
-		layoutRect,
-		brush1
-		);
+	if (theInput.isKeyDown(DIK_UPARROW))
+	{
+		RenderTarget->DrawTextW(
+			L"按下了",
+			strlen("按下了"),
+			theDirect2D.Get_WriteTextFormat(),
+			layoutRect,
+			brush1
+			);
+	}
+	else
+	{
+		RenderTarget->DrawTextW(
+			L"弹起了",
+			strlen("弹起了"),
+			theDirect2D.Get_WriteTextFormat(),
+			layoutRect,
+			brush1
+			);
+	}
+
 	RenderTarget->EndDraw();
 }
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -93,7 +94,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		HDC hdc = BeginPaint(hWnd, &ps);
 		// TODO: Add any drawing code that uses hdc here...
 		EndPaint(hWnd, &ps);*/
-		Render();
+		//Render();
 		ValidateRect(theWindow.getHwnd(), nullptr);
 	}
 	break;

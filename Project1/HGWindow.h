@@ -18,6 +18,7 @@ public:
 		}
 		return m_Hwnd;
 	}
+
 	HGWindow();
 	~HGWindow();
 	void HGWindow::HG_Init_Window(LPCWSTR title, WNDPROC WndProc, HINSTANCE hInstance, int nCmdShow, int width, int height);
