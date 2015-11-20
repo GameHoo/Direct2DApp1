@@ -22,6 +22,7 @@ private:
 			(*ppInterfaceToRelease) = NULL;
 		}
 	}
+	BOOL Device_Read(IDirectInputDevice8*pDIDevice, void* pBuffer, long lSize);
 public:
 	HGInput()
 	{
@@ -32,7 +33,7 @@ public:
 		
 	}
 	void init(HINSTANCE hInstance, HWND hwnd);
-	BOOL Device_Read(IDirectInputDevice8*pDIDevice, void* pBuffer, long lSize);
+	
 	BOOL isKeyDown(int DIK);
 
 	

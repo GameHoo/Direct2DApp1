@@ -122,6 +122,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GameTimer.hpp" />
     <ClCompile Include="HGDirect2D.cpp" />
     <ClCompile Include="HGInput.cpp" />
     <ClCompile Include="HGWindow.cpp" />
@@ -131,7 +132,7 @@
     <ClInclude Include="HGDirect2D.h" />
     <ClInclude Include="HGInput.h" />
     <ClInclude Include="HGWindow.h" />
-    <ClInclude Include="Spirit.h" />
+    <ClInclude Include="Spirit.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -27,6 +27,9 @@
     <ClCompile Include="HGInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GameTimer.hpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HGDirect2D.h">
@@ -38,7 +41,7 @@
     <ClInclude Include="HGInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Spirit.h">
+    <ClInclude Include="Spirit.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
