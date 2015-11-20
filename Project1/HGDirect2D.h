@@ -9,6 +9,8 @@ ID2D1Factory RenderTarget
 #pragma comment(lib,"d2d1.lib")
 #include<dwrite.h>
 #pragma comment(lib,"dwrite.lib")
+#include<wincodec.h>
+#pragma comment(lib, "Windowscodecs.lib" )
 class HGDirect2D
 {
 private:
@@ -87,5 +89,72 @@ public:
 			throw(L"m_TextFormat==nullptr");
 		}
 		return m_TextFormat;
+	}
+	void DrawBitmapFromFile(WCHAR* FileName, UINT width, UINT height,float x,float y)
+	{
+		IWICBitmapDecoder *pDecoder = NULL;
+		IWICBitmapFrameDecode *pSource = NULL;
+		IWICStream *pStream = NULL;
+		IWICFormatConverter *pConverter = NULL;
+		IWICBitmapScaler *pScaler = NULL;
+		ID2D1Bitmap *ppBitmap = NULL;
+		IWICImagingFactory *piFactory = NULL;
+		CoCreateInstance(
+			CLSID_WICImagingFactory,
+			NULL,
+			CLSCTX_INPROC_SERVER,
+			IID_PPV_ARGS(&piFactory)
+			);
+		piFactory->CreateDecoderFromFilename(FileName,
+			0, GENERIC_READ, WICDecodeMetadataCacheOnLoad,
+			&pDecoder);
+		pDecoder->GetFrame(0,&pSource);
+		UINT originalWidth, originalHeight;
+		pSource->GetSize(&originalWidth, &originalHeight);
+		double rate = originalWidth / (double)originalHeight;
+		if (width > height)
+		{
+			width = static_cast<UINT>(height*rate);
+		}
+		else
+		{
+			height = static_cast<UINT>(width / rate);
+		}
+		piFactory->CreateBitmapScaler(&pScaler);
+		pScaler->Initialize(
+			pSource,
+			width,
+			height,
+			WICBitmapInterpolationModeCubic
+			);
+		piFactory->CreateFormatConverter(&pConverter);
+		pConverter->Initialize(
+			pScaler,
+			GUID_WICPixelFormat32bppPBGRA,
+			WICBitmapDitherTypeNone,
+			NULL,
+			0.0,
+			WICBitmapPaletteTypeMedianCut
+			);
+		m_pRenderTarget->CreateBitmapFromWicBitmap(
+			pConverter,
+			NULL,
+			&ppBitmap
+			);
+		m_pRenderTarget->DrawBitmap(ppBitmap,
+			D2D1::RectF(
+				x -25.f,
+				y- 25.f,
+				x+25.f,
+				y+25.f
+				)
+			,1.0);
+		SafeRelease(&pDecoder);
+		SafeRelease(&pSource);
+		SafeRelease(&pStream);
+		SafeRelease(&pConverter);
+		SafeRelease(&pScaler);
+		SafeRelease(&piFactory);
+		SafeRelease(&ppBitmap);
 	}
 };
