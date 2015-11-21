@@ -11,6 +11,12 @@ ID2D1Factory RenderTarget
 #pragma comment(lib,"dwrite.lib")
 #include<wincodec.h>
 #pragma comment(lib, "Windowscodecs.lib" )
+#include<vector>
+#include "Spirit.hpp"
+#include <sstream>
+#include <string>
+
+using namespace std;
 class HGDirect2D
 {
 private:
@@ -24,8 +30,10 @@ private:
 	IDWriteTextFormat * m_TextFormat = nullptr;
 	//使用呈现器目标绘制各种形状
 	ID2D1HwndRenderTarget* m_pRenderTarget = nullptr;
-	
 	//初始化与设备无关资源
+	IWICImagingFactory * m_WICFactory = nullptr;
+	//图片资源表
+	vector<ID2D1Bitmap*> m_bmps;
 	void CreateDeviceIndependentResources();
 
 	//初始化与设备有关资源
@@ -34,7 +42,9 @@ private:
 
 public:
 	HGDirect2D()
-	{}
+	{
+		
+	}
 	~HGDirect2D()
 	{
 		SafeRelease(&m_pRenderTarget);
@@ -57,6 +67,7 @@ public:
 		m_hwnd = hwnd;
 		CreateDeviceIndependentResources();
 		CreateDeviceResources();
+		Init_LoadBMP();
 	}
 	ID2D1Factory* Get_Factory()
 	{
@@ -90,71 +101,13 @@ public:
 		}
 		return m_TextFormat;
 	}
-	void DrawBitmapFromFile(WCHAR* FileName, UINT width, UINT height,float x,float y)
-	{
-		IWICBitmapDecoder *pDecoder = NULL;
-		IWICBitmapFrameDecode *pSource = NULL;
-		IWICStream *pStream = NULL;
-		IWICFormatConverter *pConverter = NULL;
-		IWICBitmapScaler *pScaler = NULL;
-		ID2D1Bitmap *ppBitmap = NULL;
-		IWICImagingFactory *piFactory = NULL;
-		CoCreateInstance(
-			CLSID_WICImagingFactory,
-			NULL,
-			CLSCTX_INPROC_SERVER,
-			IID_PPV_ARGS(&piFactory)
-			);
-		piFactory->CreateDecoderFromFilename(FileName,
-			0, GENERIC_READ, WICDecodeMetadataCacheOnLoad,
-			&pDecoder);
-		pDecoder->GetFrame(0,&pSource);
-		UINT originalWidth, originalHeight;
-		pSource->GetSize(&originalWidth, &originalHeight);
-		double rate = originalWidth / (double)originalHeight;
-		if (width > height)
-		{
-			width = static_cast<UINT>(height*rate);
-		}
-		else
-		{
-			height = static_cast<UINT>(width / rate);
-		}
-		piFactory->CreateBitmapScaler(&pScaler);
-		pScaler->Initialize(
-			pSource,
-			width,
-			height,
-			WICBitmapInterpolationModeCubic
-			);
-		piFactory->CreateFormatConverter(&pConverter);
-		pConverter->Initialize(
-			pScaler,
-			GUID_WICPixelFormat32bppPBGRA,
-			WICBitmapDitherTypeNone,
-			NULL,
-			0.0,
-			WICBitmapPaletteTypeMedianCut
-			);
-		m_pRenderTarget->CreateBitmapFromWicBitmap(
-			pConverter,
-			NULL,
-			&ppBitmap
-			);
-		m_pRenderTarget->DrawBitmap(ppBitmap,
-			D2D1::RectF(
-				x -25.f,
-				y- 25.f,
-				x+25.f,
-				y+25.f
-				)
-			,1.0);
-		SafeRelease(&pDecoder);
-		SafeRelease(&pSource);
-		SafeRelease(&pStream);
-		SafeRelease(&pConverter);
-		SafeRelease(&pScaler);
-		SafeRelease(&piFactory);
-		SafeRelease(&ppBitmap);
-	}
+	//初始化加载BMP
+	void Init_LoadBMP();
+
+	ID2D1Bitmap* LoadBMP(wchar_t* FileName);
+	
+	ID2D1Bitmap* GetBitmapFromSpirit(Spirit * spirit);
+
+	void DrawSprit(Spirit* spirit);
+	
 };

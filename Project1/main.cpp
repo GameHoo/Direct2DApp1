@@ -4,9 +4,11 @@
 #include "HGDirect2D.h"
 #include "HGInput.h"
 #include"GameTimer.hpp"
-#include "Spirit.hpp"
+#include "Spirit.hpp".
+#include "Player.hpp"
 #include<Windows.h>
 #include <sstream>
+#include <crtdbg.h>
 using namespace std;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void CalculateFPS();
@@ -18,24 +20,20 @@ HGWindow theWindow;
 HGDirect2D theDirect2D;
 HGInput theInput;
 GameTimer theTimer;
-spirit player;
-
+Player* player = nullptr;
+bool isRun = true;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
 	_In_ int       nCmdShow)
 {
-
+	
 	theWindow.HG_Init_Window(L"À×öªÕ½»ú", WndProc, hInstance, nCmdShow, width, height);
 	theDirect2D.Init(theWindow.getHwnd());
 	theInput.init(hInstance, theWindow.getHwnd());
 	theTimer.Reset();
-	player.x = 400;
-	player.y = 600;
-	player.speed = 350;
-	player.MaxSpeed = 250;
-	player.acceleration = 0;
+	player=new Player();
 
 	MSG msg;
 	while (true)
@@ -48,11 +46,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 			DispatchMessage(&msg);
 		}
-		Update(theTimer.DeltaTime());
-		Render();
-		theTimer.Tick();
+		if (isRun)
+		{
+			Update(theTimer.DeltaTime());
+			Render();
+			theTimer.Tick();
+		}
 	}
-
+	//_CrtDumpMemoryLeaks();
 	return 0;
 }
 //Âß¼­¼ÆËã
@@ -61,44 +62,38 @@ void Update(float Delta)
 	//wostringstream outs;
 	
 	
-	vector2D direction;
+	vector2D direction=vector2D(0,0);
+
 	if(theInput.isKeyDown(DIK_UPARROW))
 	{
-		direction.x = 0;
-		direction.y = -1;
+		direction.y += -1;
 		//outs << L"ÉÏ";
 	}
-	else if(theInput.isKeyDown(DIK_DOWNARROW))
+	if(theInput.isKeyDown(DIK_DOWNARROW))
 	{
-		direction.x = 0;
-		direction.y = 1;
+		direction.y += 1;
 		//outs << L"ÏÂ";
 	}
-	else if (theInput.isKeyDown(DIK_LEFTARROW))
+	if (theInput.isKeyDown(DIK_LEFTARROW))
 	{
-		direction.x = -1;
-		direction.y = 0;
+		direction.x += -1;
 		//outs << L"×ó";
 	}
-	else if (theInput.isKeyDown(DIK_RIGHTARROW))
+	if (theInput.isKeyDown(DIK_RIGHTARROW))
 	{
-		direction.x = 1;
-		direction.y = 0;
+		direction.x += 1;
 		//outs << L"ÓÒ";
 	}
-	else
-	{
-		
-	}
-	player.directionvector = direction;
+	
+	player->directionvector = direction;
 	//SetWindowText(theWindow.getHwnd(), outs.str().c_str());
-	player.move(theTimer.DeltaTime());
+	player->move(theTimer.DeltaTime());
 
 }
 //äÖÈ¾
 void Render()
 {
-	//CalculateFPS();
+	CalculateFPS();
 	ID2D1RenderTarget* RenderTarget = static_cast<ID2D1RenderTarget*>(theDirect2D.Get_RenderTarget());
 	ID2D1SolidColorBrush *brush1;
 	RECT rc;
@@ -118,12 +113,14 @@ void Render()
 	RenderTarget->BeginDraw();
 
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
 
-	theDirect2D.DrawBitmapFromFile(L"C:\\Users\\GameHoo\\Pictures\\À×öªÕ½»ú\\player.png", 50, 50, player.x, player.y);
+	theDirect2D.DrawSprit(player);
 	
 	wostringstream outs;
-	outs << L"x:"<<player.x<<" y:"<<player.y<<L" DletaTime:"<<theTimer.DeltaTime();
+	outs << L"x:" << player->x << " y:" << player->y << L" DletaTime:" << theTimer.DeltaTime()
+		<< L"  speed:" << player->speed.GetModel()<<L"  angle:"<<player->getAngle(); 
+
 	SetWindowText(theWindow.getHwnd(), outs.str().c_str());
 	
 	RenderTarget->EndDraw();
@@ -157,10 +154,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			theTimer.Stop();
+			isRun = false;
 		}
 		else
 		{
 			theTimer.Start();
+			isRun = true;
 		}
 	}
 	break;
