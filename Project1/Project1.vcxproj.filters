@@ -33,6 +33,9 @@
     <ClCompile Include="GameTimer.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="Bullet1.hpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HGDirect2D.h">

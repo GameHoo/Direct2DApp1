@@ -69,6 +69,7 @@ void HGDirect2D::CreateDeviceResources()
 void HGDirect2D::Init_LoadBMP()
 {
 	m_bmps.push_back(LoadBMP(L"file/player.png"));
+	m_bmps.push_back(LoadBMP(L"file/bullet1.png"));
 }
 ID2D1Bitmap* HGDirect2D::LoadBMP(wchar_t* FileName)
 {

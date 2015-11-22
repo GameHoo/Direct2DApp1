@@ -1,5 +1,6 @@
 #pragma once
-#include<math.h>
+#include<cmath>
+using namespace std;
 enum BMP_ID
 {
 	PLAYER= 0,
@@ -20,7 +21,7 @@ public:
 	float y;
 	bool isZero()
 	{
-		if (abs(x) < 0.000001 && abs(y) < 0.000001)return true;
+		if (fabsf(x) < 0.000001 && fabsf(y) < 0.000001)return true;
 		return false;
 	}
 	//向量求模
@@ -61,7 +62,17 @@ struct Size2D
 class Spirit
 {
 public:
-	Spirit(BMP_ID aid=BMP_ID::PLAYER, vector2D aspeed=vector2D(0,0),float aMaxSpeed=0,float aacceleration=0,float ax=0,float ay=0,vector2D aDirectionVector =0,Size2D asize=0)
+	Spirit(BMP_ID aid=BMP_ID::PLAYER, 
+		vector2D aspeed=vector2D(0,0),
+		float aMaxSpeed=0,
+		float aacceleration=0,
+		float ax=0,
+		float ay=0,
+		vector2D aDirectionVector =0,
+		Size2D asize=0,
+		int ahp=1000,
+		int aattack=100
+		)
 		:
 		id(aid),
 		speed(aspeed),
@@ -70,7 +81,9 @@ public:
 		x(ax),
 		y(ay),
 		directionvector(aDirectionVector),
-		size(asize)
+		size(asize),
+		hp(ahp),
+		attack(attack)
 	{
 		
 	}
@@ -88,8 +101,20 @@ public:
 	Size2D size;
 	//图片资源ID
 	BMP_ID id;
+	//生命值
+	int hp ;
+	//攻击力
+	int attack ;
+	bool isdead()
+	{
+		if(hp<=0)
+		{
+			return true;
+		}
+		return false;
+	}
 	//得到运动方向和Y轴正方向向量的夹角
-	float getAngle()
+	virtual	float getAngle()
 	{
 		vector2D temp = speed;
 		float angle = 0;
@@ -109,7 +134,7 @@ public:
 		return angle;
 	}
 	//进行运动
-	void move(float DeltaTime)
+virtual	void move(float DeltaTime)
 	{
 		if(directionvector.isZero())//没有方向
 		{

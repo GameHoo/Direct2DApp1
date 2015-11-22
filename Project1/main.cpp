@@ -9,7 +9,10 @@
 #include<Windows.h>
 #include <sstream>
 #include <crtdbg.h>
+#include <vector>
 using namespace std;
+int isOutOfRange(float x, float y, float width, float height);
+bool Forceoffset(vector2D &direction, int result);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void CalculateFPS();
 void Render();
@@ -20,7 +23,15 @@ HGWindow theWindow;
 HGDirect2D theDirect2D;
 HGInput theInput;
 GameTimer theTimer;
-Player* player = nullptr;
+//精灵列表
+vector<Spirit*> Spirit_List;
+//敌机数量
+int Number_Of_Enemy = 0;
+//我方子弹导弹数量
+int Number_Of_Ours = 0;
+//敌方子弹导弹数量
+int Number_Of_Theirs = 0;
+
 bool isRun = true;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -33,7 +44,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theDirect2D.Init(theWindow.getHwnd());
 	theInput.init(hInstance, theWindow.getHwnd());
 	theTimer.Reset();
-	player=new Player();
+	//生成玩家
+	Spirit_List.push_back(new Player());
 
 	MSG msg;
 	while (true)
@@ -48,6 +60,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 		if (isRun)
 		{
+			//执行逻辑
 			Update(theTimer.DeltaTime());
 			Render();
 			theTimer.Tick();
@@ -59,38 +72,96 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //逻辑计算
 void Update(float Delta)
 {
-	//wostringstream outs;
-	
-	
+	//产生牵扯力
 	vector2D direction=vector2D(0,0);
-
 	if(theInput.isKeyDown(DIK_UPARROW))
 	{
 		direction.y += -1;
-		//outs << L"上";
+		
 	}
 	if(theInput.isKeyDown(DIK_DOWNARROW))
 	{
 		direction.y += 1;
-		//outs << L"下";
+		
 	}
 	if (theInput.isKeyDown(DIK_LEFTARROW))
 	{
 		direction.x += -1;
-		//outs << L"左";
+		
 	}
 	if (theInput.isKeyDown(DIK_RIGHTARROW))
 	{
 		direction.x += 1;
-		//outs << L"右";
+		
 	}
-	
-	player->directionvector = direction;
-	//SetWindowText(theWindow.getHwnd(), outs.str().c_str());
-	player->move(theTimer.DeltaTime());
 
+	
+	
+	//在窗口界限抵消对应的力
+	int result = isOutOfRange(Spirit_List[0]->x, Spirit_List[0]->y, Spirit_List[0]->size.width, Spirit_List[0]->size.height);
+	Forceoffset(direction, result);
+	//飞机运动
+	Spirit_List[0]->directionvector = direction;
+	Spirit_List[0]->move(theTimer.DeltaTime());
 }
-//渲染
+/*
+判断物体是否在界限上
+返回0不越界
+    1左边界限
+    2上
+    4右
+    8下
+*/
+//根据OutOfRange返回值抵消里 返回值为ture代表产生了抵消
+bool Forceoffset(vector2D &direction,int result)
+{
+	bool r = false;
+	//在左边界 抵消向左的力
+	if (result & 1)
+	{
+		if (direction.x < 0)
+		{
+			direction.x = 0;
+			r = true;
+		}
+	}
+	if (result & 2)
+	{
+		if (direction.y < 0)
+		{
+			direction.y = 0;
+			r = true;
+		}
+	}
+	if (result & 4)
+	{
+		if (direction.x > 0)
+		{
+			direction.x = 0;
+			r = true;
+		}
+	}
+	if (result & 8)
+	{
+		if (direction.y > 0)
+		{
+			direction.y = 0;
+			r = true;
+		}
+
+	}
+	return r;
+}
+int isOutOfRange(float x,float y,float width,float height)
+{
+	int result = 0;
+	if (x < 0.f + width/2)result+=1;
+	if (y < 0.f + height/2)result+= 2;
+	if (x > 0.f + 600.f-width/2)result += 4;
+	if (y > 0.f + 600.f-height/2)result += 8;
+	return result;
+}
+//画面渲染
 void Render()
 {
 	CalculateFPS();
@@ -115,16 +186,13 @@ void Render()
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
 
-	theDirect2D.DrawSprit(player);
+	theDirect2D.DrawSprit(Spirit_List[0]);
 	
-	wostringstream outs;
-	outs << L"x:" << player->x << " y:" << player->y << L" DletaTime:" << theTimer.DeltaTime()
-		<< L"  speed:" << player->speed.GetModel()<<L"  angle:"<<player->getAngle(); 
-
-	SetWindowText(theWindow.getHwnd(), outs.str().c_str());
+	
 	
 	RenderTarget->EndDraw();
 }
+//计算FPS
 void CalculateFPS()
 {
 	static int frameCnt = 0;
@@ -145,6 +213,7 @@ void CalculateFPS()
 		timeElapsed += 1.0f;
 	}
 }
+//窗口循环
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
