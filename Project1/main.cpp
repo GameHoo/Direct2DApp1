@@ -6,13 +6,17 @@
 #include"GameTimer.hpp"
 #include "Spirit.hpp".
 #include "Player.hpp"
+#include"Bullet1.hpp"
 #include<Windows.h>
 #include <sstream>
 #include <crtdbg.h>
 #include <vector>
 using namespace std;
-int isOutOfRange(float x, float y, float width, float height);
-bool Forceoffset(vector2D &direction, int result);
+int isOutOfRange(Spirit* spirit);
+bool Forceoffset(vector2D &direction,
+	int result
+	);
+void CorrectSpiritPosition(Spirit* s, float left = 0.f, float top = 0.f, float right = 600.f, float bottom = 600.f);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void CalculateFPS();
 void Render();
@@ -74,6 +78,10 @@ void Update(float Delta)
 {
 	//产生牵扯力
 	vector2D direction=vector2D(0,0);
+	//这次逻辑结束需要删除的精灵
+	vector<Spirit*>Delete_List;
+	Player* player = static_cast<Player*>(Spirit_List[0]);
+
 	if(theInput.isKeyDown(DIK_UPARROW))
 	{
 		direction.y += -1;
@@ -98,11 +106,62 @@ void Update(float Delta)
 	
 	
 	//在窗口界限抵消对应的力
-	int result = isOutOfRange(Spirit_List[0]->x, Spirit_List[0]->y, Spirit_List[0]->size.width, Spirit_List[0]->size.height);
+	int result = isOutOfRange(player);
 	Forceoffset(direction, result);
 	//飞机运动
-	Spirit_List[0]->directionvector = direction;
-	Spirit_List[0]->move(theTimer.DeltaTime());
+	player->directionvector = direction;
+	player->move(theTimer.DeltaTime());
+	//最后因为deltatime太小 物体速度很大 还是会越界 修正坐标
+	CorrectSpiritPosition(player);
+	//其余精灵移动
+	for (vector<Spirit*>::iterator i=Spirit_List.begin()+1; i!=Spirit_List.end(); i++)
+	{
+		Spirit* temp = *i;
+		temp->move(theTimer.DeltaTime());
+	}
+	//检查现有子弹是否越界
+	for (int i = 1; i <= Number_Of_Ours; i++)
+	{
+		//子弹越界消失
+		Spirit* temp = Spirit_List[i];
+		if (isOutOfRange(temp))
+		{
+			Delete_List.push_back(temp);
+		}
+	}
+	//生成我方子弹
+	if (player->ShootNumber == 1) {
+		if (player->isTimeToShoot(theTimer.DeltaTime()))
+		{
+			Bullet1* bullet = new Bullet1();
+			bullet->x = player->x;
+			bullet->y = player->y - player->size.height;
+			Number_Of_Ours++;
+			Spirit_List.insert(Spirit_List.begin() + Number_Of_Ours, bullet);
+		}
+	}
+	wostringstream outs;
+	outs << "x:" << Spirit_List[0]->x
+		<< " y:" << Spirit_List[0]->y;
+	SetWindowText(theWindow.getHwnd(), outs.str().c_str());
+	//删除需要删除的精灵
+	for (vector<Spirit*>::iterator i=Delete_List.begin(); i != Delete_List.end(); i++)
+	{
+		Spirit* temp = *i;
+		for (vector<Spirit*>::iterator j = Spirit_List.begin(); j != Spirit_List.end(); j++)
+		{
+			if (temp == *j)
+			{
+				j=Spirit_List.erase(j);
+				if (temp->id == BMP_ID::BULLET_1)
+				{
+					Number_Of_Ours--;
+				}
+				break;
+			}
+		}
+		
+	}
 }
 /*
 判断物体是否在界限上
@@ -112,8 +171,18 @@ void Update(float Delta)
     4右
     8下
 */
-//根据OutOfRange返回值抵消里 返回值为ture代表产生了抵消
-bool Forceoffset(vector2D &direction,int result)
+//修正精灵位置使其在矩形内
+void CorrectSpiritPosition(Spirit* s, float left, float top, float right, float bottom)
+{
+	if (s->x < left)s->x = left;
+	if (s->x > right)s->x = right;
+	if (s->y < top)s->y=top;
+	if (s->y > bottom)s->y = bottom;
+}
+//撞墙抵消力
+bool Forceoffset(vector2D &direction,
+	int result
+	)
 {
 	bool r = false;
 	//在左边界 抵消向左的力
@@ -123,6 +192,7 @@ bool Forceoffset(vector2D &direction,int result)
 		{
 			direction.x = 0;
 			r = true;
+			
 		}
 	}
 	if (result & 2)
@@ -131,6 +201,7 @@ bool Forceoffset(vector2D &direction,int result)
 		{
 			direction.y = 0;
 			r = true;
+			
 		}
 	}
 	if (result & 4)
@@ -139,6 +210,7 @@ bool Forceoffset(vector2D &direction,int result)
 		{
 			direction.x = 0;
 			r = true;
+			
 		}
 	}
 	if (result & 8)
@@ -147,13 +219,19 @@ bool Forceoffset(vector2D &direction,int result)
 		{
 			direction.y = 0;
 			r = true;
+			
 		}
 
 	}
 	return r;
 }
-int isOutOfRange(float x,float y,float width,float height)
+//求精灵是否越界
+int isOutOfRange(Spirit* spirit)
 {
+	int x = spirit->x;
+	int y = spirit->y;
+	int width = spirit->size.width;
+	int height = spirit->size.height;
 	int result = 0;
 	if (x < 0.f + width/2)result+=1;
 	if (y < 0.f + height/2)result+= 2;
@@ -164,9 +242,9 @@ int isOutOfRange(float x,float y,float width,float height)
 //画面渲染
 void Render()
 {
-	CalculateFPS();
+	
 	ID2D1RenderTarget* RenderTarget = static_cast<ID2D1RenderTarget*>(theDirect2D.Get_RenderTarget());
-	ID2D1SolidColorBrush *brush1;
+	/*ID2D1SolidColorBrush *brush1;
 	RECT rc;
 	GetClientRect(theWindow.getHwnd(), &rc);
 
@@ -179,14 +257,20 @@ void Render()
 	RenderTarget->CreateSolidColorBrush(
 		D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
 		&brush1
-		);
+		);*/
 
 	RenderTarget->BeginDraw();
-
-	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
+	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+	//画出每个精灵
+	for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end(); i++)
+	{
+		Spirit* temp = *i;
+		theDirect2D.DrawSprit(temp);
+	}
+	
 
-	theDirect2D.DrawSprit(Spirit_List[0]);
+	
 	
 	
 	
