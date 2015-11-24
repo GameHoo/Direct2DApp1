@@ -25,7 +25,7 @@ void HGWindow::HG_Init_Window(LPCWSTR title, WNDPROC WndProc, HINSTANCE hInstanc
 	wc.lpszMenuName = nullptr;
 	wc.lpszClassName = m_ClassName;
 	RegisterClassW(&wc);
-	m_Hwnd = CreateWindowW(L"WINDOW", title, WS_OVERLAPPEDWINDOW,
+	m_Hwnd = CreateWindowW(m_ClassName, title, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, 0, m_Width, m_Height, nullptr, nullptr, hInstance, nullptr);
 	if (!m_Hwnd)
 	{

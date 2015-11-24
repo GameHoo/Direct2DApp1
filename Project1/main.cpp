@@ -16,7 +16,7 @@ int isOutOfRange(Spirit* spirit);
 bool Forceoffset(vector2D &direction,
 	int result
 	);
-void CorrectSpiritPosition(Spirit* s, float left = 0.f, float top = 0.f, float right = 600.f, float bottom = 600.f);
+void CorrectSpiritPosition(Spirit* s);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void CalculateFPS();
 void Render();
@@ -43,7 +43,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ LPWSTR    lpCmdLine,
 	_In_ int       nCmdShow)
 {
-	
+    
 	theWindow.HG_Init_Window(L"雷霆战机", WndProc, hInstance, nCmdShow, width, height);
 	theDirect2D.Init(theWindow.getHwnd());
 	theInput.init(hInstance, theWindow.getHwnd());
@@ -152,7 +152,10 @@ void Update(float Delta)
 		{
 			if (temp == *j)
 			{
-				j=Spirit_List.erase(j);
+				/*wostringstream outs;
+				outs << L"speed:" << (temp->speed.GetModel())<< L" 加速度" << (temp->acceleration);
+				SetWindowText(theWindow.getHwnd(), outs.str().c_str());
+				j=Spirit_List.erase(j);*/
 				if (temp->id == BMP_ID::BULLET_1)
 				{
 					Number_Of_Ours--;
@@ -171,9 +174,13 @@ void Update(float Delta)
     4右
     8下
 */
-//修正精灵位置使其在矩形内
-void CorrectSpiritPosition(Spirit* s, float left, float top, float right, float bottom)
+//修正精灵位置使其在游戏区
+void CorrectSpiritPosition(Spirit* s)
 {
+	float left = 0.f + s->size.width / 2;
+	float right = 600.f - s->size.width / 2;
+	float top = 0.f + s->size.height / 2;
+	float bottom = 600.f - s->size.height / 2;
 	if (s->x < left)s->x = left;
 	if (s->x > right)s->x = right;
 	if (s->y < top)s->y=top;
@@ -244,36 +251,26 @@ void Render()
 {
 	
 	ID2D1RenderTarget* RenderTarget = static_cast<ID2D1RenderTarget*>(theDirect2D.Get_RenderTarget());
-	/*ID2D1SolidColorBrush *brush1;
-	RECT rc;
-	GetClientRect(theWindow.getHwnd(), &rc);
+	ID2D1SolidColorBrush *brush1;
 
-	D2D1_RECT_F layoutRect = D2D1::RectF(
-		static_cast<FLOAT>(rc.left),
-		static_cast<FLOAT>(rc.top),
-		static_cast<FLOAT>(rc.right - rc.left),
-		static_cast<FLOAT>(rc.bottom - rc.top)
-		);
 	RenderTarget->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
+		D2D1::ColorF(D2D1::ColorF(0xececee)),
 		&brush1
-		);*/
+		);
 
 	RenderTarget->BeginDraw();
-	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
+	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0xacd0ce)));
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+	//绘制菜单
+	RenderTarget->DrawLine(D2D1::Point2F(700.f, 0.f),
+		D2D1::Point2F(700.f, 600.f), brush1, 200.f);
+	
 	//画出每个精灵
 	for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end(); i++)
 	{
 		Spirit* temp = *i;
 		theDirect2D.DrawSprit(temp);
 	}
-	
-
-	
-	
-	
-	
 	RenderTarget->EndDraw();
 }
 //计算FPS
@@ -318,9 +315,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_PAINT:
 	{
-	
-		//Render();
-		ValidateRect(theWindow.getHwnd(), nullptr);
+ 	   ValidateRect(theWindow.getHwnd(), nullptr);
 	}
 	break;
 	case WM_DESTROY:

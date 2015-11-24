@@ -6,7 +6,7 @@ public:
 	Bullet1() :Spirit(
 		BMP_ID::BULLET_1,//Í¼Æ¬ÎÄ¼þID
 		vector2D(0, 0),  //speed
-		100, //maxspeed
+		500, //maxspeed
 		10000, //acceleration
 		400,//x
 		550,//y

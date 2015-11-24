@@ -137,6 +137,8 @@
     <ClInclude Include="Spirit.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\..\Pictures\雷霆战机\enemy1.png" />
+    <Image Include="file\bullet1.png" />
     <Image Include="file\player.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -4,7 +4,7 @@ class Player :public Spirit
 {
 public:
 	//飞机发射子弹频率 单位：   个/秒 
-	float ShootRate=4;
+	float ShootRate=10;
 	//飞机一次发射子弹数量 1-5个
 	int ShootNumber = 1;
 	bool isTimeToShoot(float deltatime)

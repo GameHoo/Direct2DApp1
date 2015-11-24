@@ -4,8 +4,8 @@ using namespace std;
 enum BMP_ID
 {
 	PLAYER= 0,
-	BULLET_1=1
-
+	BULLET_1=1,
+	ENEMY_1=2
 };
 //±Ì æ2D ∏¡ø
 class vector2D
