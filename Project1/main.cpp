@@ -29,13 +29,6 @@ HGInput theInput;
 GameTimer theTimer;
 //精灵列表
 vector<Spirit*> Spirit_List;
-//敌机数量
-int Number_Of_Enemy = 0;
-//我方子弹导弹数量
-int Number_Of_Ours = 0;
-//敌方子弹导弹数量
-int Number_Of_Theirs = 0;
-
 bool isRun = true;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -49,7 +42,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	theInput.init(hInstance, theWindow.getHwnd());
 	theTimer.Reset();
 	//生成玩家
-	Spirit_List.push_back(new Player());
+	Spirit_List.push_back(new Player(Spirit_List));
 
 	MSG msg;
 	while (true)
@@ -76,94 +69,59 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //逻辑计算
 void Update(float Delta)
 {
-	//产生牵扯力
-	vector2D direction=vector2D(0,0);
-	//这次逻辑结束需要删除的精灵
-	vector<Spirit*>Delete_List;
 	Player* player = static_cast<Player*>(Spirit_List[0]);
-
+	//获取用户输入
+	int keydown = 0;
 	if(theInput.isKeyDown(DIK_UPARROW))
 	{
-		direction.y += -1;
-		
+		keydown += 1;
 	}
 	if(theInput.isKeyDown(DIK_DOWNARROW))
 	{
-		direction.y += 1;
-		
+		keydown += 2;	
 	}
 	if (theInput.isKeyDown(DIK_LEFTARROW))
 	{
-		direction.x += -1;
-		
+		keydown += 4;	
 	}
 	if (theInput.isKeyDown(DIK_RIGHTARROW))
 	{
-		direction.x += 1;
-		
+		keydown += 8;
+	}
+	//精灵活动
+	
+	for (vector<Spirit*>::iterator i=Spirit_List.begin(); i !=Spirit_List.end();i++)
+	{
+		Spirit* temp = *i;
+		if(temp->id==BMP_ID::PLAYER)
+		{
+
+		i=static_cast<Player*>(temp)->action(theTimer.DeltaTime(), keydown);
+		//PLAYER会发射子弹		
+		}
+		else if(temp->id==BMP_ID::BULLET_1)
+		{
+			static_cast<Bullet1*>(temp)->action(theTimer.DeltaTime());		
+		}
 	}
 
 	
-	
-	//在窗口界限抵消对应的力
-	int result = isOutOfRange(player);
-	Forceoffset(direction, result);
-	//飞机运动
-	player->directionvector = direction;
-	player->move(theTimer.DeltaTime());
-	//最后因为deltatime太小 物体速度很大 还是会越界 修正坐标
-	CorrectSpiritPosition(player);
-	//其余精灵移动
-	for (vector<Spirit*>::iterator i=Spirit_List.begin()+1; i!=Spirit_List.end(); i++)
-	{
-		Spirit* temp = *i;
-		temp->move(theTimer.DeltaTime());
-	}
-	//检查现有子弹是否越界
-	for (int i = 1; i <= Number_Of_Ours; i++)
-	{
-		//子弹越界消失
-		Spirit* temp = Spirit_List[i];
-		if (isOutOfRange(temp))
-		{
-			Delete_List.push_back(temp);
-		}
-	}
-	//生成我方子弹
-	if (player->ShootNumber == 1) {
-		if (player->isTimeToShoot(theTimer.DeltaTime()))
-		{
-			Bullet1* bullet = new Bullet1();
-			bullet->x = player->x;
-			bullet->y = player->y - player->size.height;
-			Number_Of_Ours++;
-			Spirit_List.insert(Spirit_List.begin() + Number_Of_Ours, bullet);
-		}
-	}
 	wostringstream outs;
-	outs << "x:" << Spirit_List[0]->x
-		<< " y:" << Spirit_List[0]->y;
+	outs << L"x:" << player->x << L" y:" << player->y;
 	SetWindowText(theWindow.getHwnd(), outs.str().c_str());
-	//删除需要删除的精灵
-	for (vector<Spirit*>::iterator i=Delete_List.begin(); i != Delete_List.end(); i++)
+	//删除HP=0的精灵
+	for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end();i++)
 	{
 		Spirit* temp = *i;
-		for (vector<Spirit*>::iterator j = Spirit_List.begin(); j != Spirit_List.end(); j++)
+		if(temp->hp==0)
 		{
-			if (temp == *j)
+			if(temp->id==BMP_ID::PLAYER)//游戏结束
 			{
-				/*wostringstream outs;
-				outs << L"speed:" << (temp->speed.GetModel())<< L" 加速度" << (temp->acceleration);
-				SetWindowText(theWindow.getHwnd(), outs.str().c_str());
-				j=Spirit_List.erase(j);*/
-				if (temp->id == BMP_ID::BULLET_1)
-				{
-					Number_Of_Ours--;
-				}
-				break;
+				
 			}
+			delete temp;
+			i=Spirit_List.erase(i);
 		}
-		
 	}
 }
 /*

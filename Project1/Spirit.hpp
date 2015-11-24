@@ -1,6 +1,8 @@
 #pragma once
+
 #include<cmath>
 using namespace std;
+
 enum BMP_ID
 {
 	PLAYER= 0,
@@ -62,30 +64,11 @@ struct Size2D
 class Spirit
 {
 public:
-	Spirit(BMP_ID aid=BMP_ID::PLAYER, 
-		vector2D aspeed=vector2D(0,0),
-		float aMaxSpeed=0,
-		float aacceleration=0,
-		float ax=0,
-		float ay=0,
-		vector2D aDirectionVector =0,
-		Size2D asize=0,
-		int ahp=1000,
-		int aattack=100
-		)
-		:
-		id(aid),
-		speed(aspeed),
-		MaxSpeed(aMaxSpeed),
-		acceleration(aacceleration),
-		x(ax),
-		y(ay),
-		directionvector(aDirectionVector),
-		size(asize),
-		hp(ahp),
-		attack(attack)
+	Spirit()
 	{
-		
+		speed = 0; MaxSpeed = 0; acceleration = 0;
+		x = 0; y = 0; direction = vector2D(0, 0); size = Size2D(0, 0);
+		id = BMP_ID::PLAYER; hp = 1000; attack = 100;
 	}
 	//当前速度 单位（像素数/s）
 	vector2D speed ;
@@ -96,7 +79,7 @@ public:
 	float x;
 	float y;
 	//方向
-	vector2D directionvector;
+	vector2D direction;
 	//物体大小
 	Size2D size;
 	//图片资源ID
@@ -134,21 +117,25 @@ public:
 		return angle;
 	}
 	//进行运动
-virtual	void move(float DeltaTime)
+	virtual void action(float DeltaTime)
 	{
-		if(directionvector.isZero())//没有方向
+		move(DeltaTime);
+	}
+	void move(float DeltaTime)
+	{
+		if(direction.isZero())//没有方向
 		{
 			return;
 		}
 		else
 		{
 			//根据力的方向 计算出x y 加速度分量
-			directionvector.VectorToOne();
-			directionvector = directionvector*(acceleration*DeltaTime);
+			direction.VectorToOne();
+			direction = direction*(acceleration*DeltaTime);
 
 			//加速度分量加到速度中
-			speed.x += directionvector.x;
-			speed.y += directionvector.y;
+			speed.x += direction.x;
+			speed.y += direction.y;
 			//最大速度限制
 			if(speed.GetModel()>MaxSpeed)
 			{
@@ -170,4 +157,5 @@ virtual	void move(float DeltaTime)
 			}
 		}
 	}
+
 };
