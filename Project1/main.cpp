@@ -133,77 +133,7 @@ void Update(float Delta)
     8下
 */
 //修正精灵位置使其在游戏区
-void CorrectSpiritPosition(Spirit* s)
-{
-	float left = 0.f + s->size.width / 2;
-	float right = 600.f - s->size.width / 2;
-	float top = 0.f + s->size.height / 2;
-	float bottom = 600.f - s->size.height / 2;
-	if (s->x < left)s->x = left;
-	if (s->x > right)s->x = right;
-	if (s->y < top)s->y=top;
-	if (s->y > bottom)s->y = bottom;
-}
-//撞墙抵消力
-bool Forceoffset(vector2D &direction,
-	int result
-	)
-{
-	bool r = false;
-	//在左边界 抵消向左的力
-	if (result & 1)
-	{
-		if (direction.x < 0)
-		{
-			direction.x = 0;
-			r = true;
-			
-		}
-	}
-	if (result & 2)
-	{
-		if (direction.y < 0)
-		{
-			direction.y = 0;
-			r = true;
-			
-		}
-	}
-	if (result & 4)
-	{
-		if (direction.x > 0)
-		{
-			direction.x = 0;
-			r = true;
-			
-		}
-	}
-	if (result & 8)
-	{
-		if (direction.y > 0)
-		{
-			direction.y = 0;
-			r = true;
-			
-		}
 
-	}
-	return r;
-}
-//求精灵是否越界
-int isOutOfRange(Spirit* spirit)
-{
-	int x = spirit->x;
-	int y = spirit->y;
-	int width = spirit->size.width;
-	int height = spirit->size.height;
-	int result = 0;
-	if (x < 0.f + width/2)result+=1;
-	if (y < 0.f + height/2)result+= 2;
-	if (x > 0.f + 600.f-width/2)result += 4;
-	if (y > 0.f + 600.f-height/2)result += 8;
-	return result;
-}
 //画面渲染
 void Render()
 {

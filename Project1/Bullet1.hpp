@@ -8,7 +8,7 @@ public:
 		x = ax;
 		y = ay;
 		id = BMP_ID::BULLET_1;
-		size = Size2D(3, 15);
+		size = Size2D(29/2, 62/2);
 		MaxSpeed = 500;
 		acceleration = 10000;
 		attack = 200;

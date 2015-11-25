@@ -33,7 +33,7 @@ public:
 		MaxSpeed = 300;
 		acceleration = 180000;
 		x = 300, y = 500;
-		size = Size2D(50, 50);
+		size = Size2D(129/2, 104/2);
 		attack = 1000;        //飞机撞另一个物体伤害
 	}
    float getAngle()
@@ -79,7 +79,7 @@ public:
 			{
 				if(*i==static_cast<Spirit*>(this))
 				{
-					Spirit* temp = new Bullet1(x,y-30);
+					Spirit* temp = new Bullet1(x,y-45);
 					i= Spirit_List.insert(i,temp);
 					return i+1;
 					
