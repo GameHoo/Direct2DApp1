@@ -70,7 +70,8 @@ void HGDirect2D::Init_LoadBMP()
 {
 	m_bmps.push_back(LoadBMP(L"file/ep_2.png"));
 	m_bmps.push_back(LoadBMP(L"file/myb_1.png"));
-	m_bmps.push_back(LoadBMP(L"file/enemy1.png"));
+	m_bmps.push_back(LoadBMP(L"file/ep_9.png"));
+	m_bmps.push_back(LoadBMP(L"file/BossBullet.png"));
 }
 ID2D1Bitmap* HGDirect2D::LoadBMP(wchar_t* FileName)
 {

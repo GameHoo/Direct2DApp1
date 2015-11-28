@@ -11,7 +11,6 @@ public:
 	float ShootRate=10;
 	//飞机一次发射子弹数量 1-5个
 	int ShootNumber = 1;
-	vector<Spirit*>& Spirit_List;
 	bool isTimeToShoot(float deltatime)
 	{
 		//累计时间
@@ -27,7 +26,7 @@ public:
 			return false;
 		}
 	}
-   Player(vector<Spirit*>& List):Spirit_List(List)
+   Player()
 	{
 		id = BMP_ID::PLAYER;
 		MaxSpeed = 300;
@@ -35,15 +34,13 @@ public:
 		x = 300, y = 500;
 		size = Size2D(129/2, 104/2);
 		attack = 1000;        //飞机撞另一个物体伤害
+		isPlayers = true;
 	}
    float getAngle()
 	{
 		return 0.f;
 	}
-   vector<Spirit*>::iterator  action(float DeltaTime,int keydown /*
-										   1 上 2下 4左 8右
-										   */
-	)
+  void action(vector<Spirit*>&Spirit_List, vector<Spirit*>::iterator &i,float DeltaTime,int keydown)
    {
 		direction = vector2D(0, 0);
 		if(keydown&1)
@@ -62,7 +59,7 @@ public:
 		{
 			direction.x += 1;
 		}
-		move(DeltaTime);
+		Spirit::action(Spirit_List, DeltaTime);
 		//移动范围限制
 		float left = 0.f + size.width / 2;
 		float right = 600.f - size.width / 2;
@@ -75,26 +72,15 @@ public:
 		//发射子弹
 		if(isTimeToShoot(DeltaTime))
 		{
-			for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end();i++)
-			{
-				if(*i==static_cast<Spirit*>(this))
-				{
-					Spirit* temp = new Bullet1(x,y-45);
-					i= Spirit_List.insert(i,temp);
-					return i+1;
-					
-				}
-			}
+			Spirit* temp = new Bullet1(x,y-45);
+			i= Spirit_List.insert(i,temp);
+			i=i+2;
+			return;
 		}
 		else
 		{
-			for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end(); i++)
-			{
-				if (*i == static_cast<Spirit*>(this))
-				{
-					return i;
-				}
-			}
+			i++;
+			return;
 		}
 	}
 

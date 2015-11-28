@@ -1,5 +1,5 @@
 #pragma once
-
+#include<vector>
 #include<cmath>
 using namespace std;
 
@@ -7,7 +7,8 @@ enum BMP_ID
 {
 	PLAYER= 0,
 	BULLET_1=1,
-	ENEMY_1=2
+	ENEMY_1=2,
+	BULLET_2=3
 };
 //表示2D矢量
 class vector2D
@@ -70,6 +71,8 @@ public:
 		x = 0; y = 0; direction = vector2D(0, 0); size = Size2D(0, 0);
 		id = BMP_ID::PLAYER; hp = 1000; attack = 100;
 	}
+	//区分敌我
+	bool isPlayers;
 	//当前速度 单位（像素数/s）
 	vector2D speed ;
 	//最大速度
@@ -117,10 +120,28 @@ public:
 		return angle;
 	}
 	//进行运动
-	virtual void action(float DeltaTime)
+	virtual void action(vector<Spirit*>&Spirit_List,float DeltaTime)
 	{
 		move(DeltaTime);
+		//本精灵攻击其他精灵
+		for (vector<Spirit*>::iterator i=Spirit_List.begin(); i != Spirit_List.end(); i++)
+		{
+			Spirit* temp = *i;
+			if ((int)temp != (int)this)
+			{
+				if (temp->isPlayers!=isPlayers)
+				{
+					//碰撞检测
+					if (attackTest(temp))
+					{
+						temp->hp -= attack;
+					}
+				}
+			}
+		}
+		
 	}
+
 	void move(float DeltaTime)
 	{
 		if(direction.isZero())//没有方向
@@ -157,5 +178,13 @@ public:
 			}
 		}
 	}
-
+	//碰撞检测
+	bool attackTest(Spirit* target)
+	{
+		if((target->size.width/2+size.width/2)>fabs(target->x-x)&&( target->size.height / 2 + size.height / 2)>fabs(target->y - y))
+		{
+			return true;
+		}
+		return false;
+	}
 };

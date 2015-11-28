@@ -7,17 +7,17 @@
 #include "Spirit.hpp".
 #include "Player.hpp"
 #include"Bullet1.hpp"
+#include "Enemy1.hpp"
 #include<Windows.h>
 #include <sstream>
-#include <crtdbg.h>
 #include <vector>
+#include<random>
 using namespace std;
-int isOutOfRange(Spirit* spirit);
-bool Forceoffset(vector2D &direction,
-	int result
-	);
-void CorrectSpiritPosition(Spirit* s);
+
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+//是否到时间生成敌机1
+bool isTimeToEnemy1(float deltatime);
 void CalculateFPS();
 void Render();
 void Update(float Delta);
@@ -30,19 +30,20 @@ GameTimer theTimer;
 //精灵列表
 vector<Spirit*> Spirit_List;
 bool isRun = true;
-
+random_device rd;
+mt19937 mt(rd());
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
 	_In_ int       nCmdShow)
 {
-    
+	
 	theWindow.HG_Init_Window(L"雷霆战机", WndProc, hInstance, nCmdShow, width, height);
 	theDirect2D.Init(theWindow.getHwnd());
 	theInput.init(hInstance, theWindow.getHwnd());
 	theTimer.Reset();
 	//生成玩家
-	Spirit_List.push_back(new Player(Spirit_List));
+	Spirit_List.push_back(new Player());
 
 	MSG msg;
 	while (true)
@@ -69,6 +70,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //逻辑计算
 void Update(float Delta)
 {
+	
 	Player* player = static_cast<Player*>(Spirit_List[0]);
 	//获取用户输入
 	int keydown = 0;
@@ -90,18 +92,26 @@ void Update(float Delta)
 	}
 	//精灵活动
 	
-	for (vector<Spirit*>::iterator i=Spirit_List.begin(); i !=Spirit_List.end();i++)
+	for (vector<Spirit*>::iterator i=Spirit_List.begin(); i !=Spirit_List.end();)
 	{
 		Spirit* temp = *i;
 		if(temp->id==BMP_ID::PLAYER)
 		{
-
-		i=static_cast<Player*>(temp)->action(theTimer.DeltaTime(), keydown);
+		static_cast<Player*>(temp)->action(Spirit_List,i,theTimer.DeltaTime(),keydown);
 		//PLAYER会发射子弹		
 		}
 		else if(temp->id==BMP_ID::BULLET_1)
 		{
-			static_cast<Bullet1*>(temp)->action(theTimer.DeltaTime());		
+			static_cast<Bullet1*>(temp)->action(Spirit_List,theTimer.DeltaTime());	
+			i++;
+		}
+		else if (temp->id == BMP_ID::ENEMY_1)
+		{
+			static_cast<Enemy1*>(temp)->action(Spirit_List,i,theTimer.DeltaTime());
+		}
+		else
+		{
+			i++;
 		}
 	}
 
@@ -109,18 +119,36 @@ void Update(float Delta)
 	wostringstream outs;
 	outs << L"x:" << player->x << L" y:" << player->y;
 	SetWindowText(theWindow.getHwnd(), outs.str().c_str());
+	//生成敌机
+	
+	if(isTimeToEnemy1(theTimer.DeltaTime()))
+	{
+		
+		int temp = mt();
+		temp %= 600;
+		Spirit_List.push_back(new Enemy1(temp,0.f));
+
+	}
 	//删除HP=0的精灵
-	for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end();i++)
+	for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end();)
 	{
 		Spirit* temp = *i;
-		if(temp->hp==0)
+		if(temp->hp<=0)
 		{
 			if(temp->id==BMP_ID::PLAYER)//游戏结束
 			{
-				
+				i++;
 			}
-			delete temp;
-			i=Spirit_List.erase(i);
+			else
+			{
+				delete temp;
+				i = Spirit_List.erase(i);
+			}
+			
+		}
+		else
+		{
+			i++;
 		}
 	}
 }
@@ -132,8 +160,22 @@ void Update(float Delta)
     4右
     8下
 */
-//修正精灵位置使其在游戏区
-
+//是否到时间生成敌机1
+bool isTimeToEnemy1(float deltatime)
+{
+	//累计时间
+	static float time = 5.f;
+	if (time >= 5.f)
+	{
+		time = 0;
+		return true;
+	}
+	else
+	{
+		time += deltatime;
+		return false;
+	}
+}
 //画面渲染
 void Render()
 {
@@ -157,7 +199,9 @@ void Render()
 	for (vector<Spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end(); i++)
 	{
 		Spirit* temp = *i;
+		//RenderTarget->BeginDraw();
 		theDirect2D.DrawSprit(temp);
+		//RenderTarget->EndDraw();
 	}
 	RenderTarget->EndDraw();
 }

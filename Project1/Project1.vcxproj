@@ -130,6 +130,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bullet2.hpp" />
+    <ClInclude Include="Enemy1.hpp" />
     <ClInclude Include="HGDirect2D.h" />
     <ClInclude Include="HGInput.h" />
     <ClInclude Include="HGWindow.h" />
