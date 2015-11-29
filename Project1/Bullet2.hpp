@@ -6,8 +6,10 @@ using namespace std;
 class Bullet2 :public Spirit
 {
 public:
+	
 	Bullet2(float ax, float ay, vector2D direction = vector2D(0, -1), bool aisPlayers = true) :Spirit()
 	{
+		
 		x = ax;
 		y = ay;
 		id = BMP_ID::BULLET_2;
@@ -17,6 +19,7 @@ public:
 		attack = 200;
 		Spirit::direction = direction;
 		isPlayers = aisPlayers;
+	
 	}
 	float getAngle()
 	{

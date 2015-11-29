@@ -87,22 +87,20 @@ void Update(float Delta)
 	{
 		keydown += 8;
 	}
-	//精灵活动 
+	
 	//发子弹要填的参数
 	wstring bullet_ID;
 	int bullet_Number;
-	int bullet_Source_x;
-	int bullet_Source_y;
 	bool bullet_IsEnemy;
 	int angle_add = 20;//多个子弹发射角度增量
 	for (vector<spirit*>::iterator i=Spirit_List.begin(); i !=Spirit_List.end();i=i+1)
 	{
 		spirit* the = *i;
 		the->action(theTimer.DeltaTime(), keydown);
-		
+		//发射子弹
 		if(the->shoot(bullet_ID,bullet_Number, bullet_IsEnemy,theTimer.DeltaTime()))
 		{
-			//发射子弹
+			
 			if(bullet_Number&1) //奇数 中间发射子弹
 			{
 				spirit* a_bullet = bullet::CreatBullet(bullet_ID, vector2D::AngleToVector(the->getAngle()), the->x, the->y, bullet_IsEnemy);
@@ -116,13 +114,13 @@ void Update(float Delta)
 			{
 				float bullet_angle;//right
 				{
-					bullet_angle = the->speed.VecoterToAngle() + add;
+					bullet_angle = the->getAngle() + add;
 					bullet_angle = (int)(bullet_angle + 360) % 360;
 					i = Spirit_List.insert(i, bullet::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
 					i++; 
 				}
 				{//left
-					bullet_angle = the->speed.VecoterToAngle() -  add;
+					bullet_angle = the->getAngle() -  add;
 					bullet_angle = (int)(bullet_angle + 360) % 360;
 					i = Spirit_List.insert(i, bullet::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
 					i++;
@@ -133,7 +131,8 @@ void Update(float Delta)
 			}
 		}
 	}
-
+	//Group Action
+	Enemy1::GroupAction(Spirit_List, theTimer.DeltaTime());
 	
 	
 	
@@ -178,9 +177,7 @@ void Render()
 	RenderTarget->BeginDraw();
 	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0xacd0ce)));
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-	//绘制菜单
-	RenderTarget->DrawLine(D2D1::Point2F(700.f, 0.f),
-		D2D1::Point2F(700.f, 600.f), brush1, 200.f);
+	
 	
 	//画出每个精灵
 	for (vector<spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end(); i++)
@@ -190,6 +187,10 @@ void Render()
 		theDirect2D.DrawSprit(temp);
 		//RenderTarget->EndDraw();
 	}
+	//绘制菜单
+	RenderTarget->DrawLine(D2D1::Point2F(700.f, 0.f),
+		D2D1::Point2F(700.f, 600.f), brush1, 200.f);
+
 	RenderTarget->EndDraw();
 }
 //计算FPS

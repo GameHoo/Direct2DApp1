@@ -6,6 +6,7 @@
 #include<wincodec.h>
 #pragma comment(lib, "Windowscodecs.lib" )
 #include<vector>
+#include<random>
 using namespace std;
 
 class vector2D
@@ -55,12 +56,12 @@ public:
 		x /= Model;
 		y /= Model;
 	}
-	vector2D operator*(float s)
+	void operator*(float s)
 	{
-		vector2D temp;
-		temp.x = x*s;
-		temp.y = y*s;
-		return temp;
+		
+		this->x = x*s;
+		this->y = y*s;
+		
 	}
 
 };
@@ -75,6 +76,7 @@ public:
 		hp = 1000;
 	}
 	~spirit() {}
+	
 	virtual void action(float DeltaTime,int keydown)
 	{
 		move(DeltaTime);
@@ -174,13 +176,13 @@ public:
 		else
 		{
 			direction.VectorToOne();
-			direction = direction*(acceleration*DeltaTime);
+			direction*(acceleration*DeltaTime);
 			speed.x += direction.x;
 			speed.y += direction.y;
 			if (speed.GetModel() > MaxSpeed)
 			{
 				speed.VectorToOne();
-				speed = speed*MaxSpeed;
+				speed*MaxSpeed;
 			}
 			if (speed.isZero())
 			{
@@ -206,9 +208,9 @@ class player:public spirit
 {
 public:
 	//飞机发射子弹频率 单位：   个/秒 
-	float ShootRate = 2;
+	float ShootRate = 5;
 	//飞机一次发射子弹数量 1-5个
-	int ShootNumber = 19;
+	int ShootNumber = 1;
 	player()
 	{
 		x = 300; y = 500;
@@ -220,11 +222,11 @@ public:
 		LoadResource();
 	}
 	~player(){}
-	/*
+	
 	float getAngle()
 	{
 		return 0.f;
-	}*/
+	}
 	bool isTimeToShoot(float deltatime)
 	{
 		static float time = 1.0/ ShootRate;
@@ -285,13 +287,16 @@ class bullet:public spirit
 private:
 	bullet() {}
 public:
+	//发射起始半径
+	float radius;
 	~bullet() {}
 	static bullet* CreatBullet(wstring _id,vector2D _direction,float _x,float _y,bool _IsEnemy=false)
 	{
 		bullet* the = nullptr;
 		the = new bullet();
+		the->radius = 30.f;
 		the->id = _id;
-		if(the->id==L"bullet1")
+		if(the->id==L"bullet1")//普通子弹
 		{
 			
 			the->MaxSpeed = 500;
@@ -301,10 +306,26 @@ public:
 			the->Is_Enemy = _IsEnemy;
 			the-> x= _x;
 			the->y = _y;
+			//根据起始半径修正x y
+			_direction.VectorToOne();
+			_direction*the->radius;
+			the->x += _direction.x;
+			the->y += _direction.y;
 		}
-		else if (the->id == L"bullet2")
+		else if (the->id == L"bullet2")//大圆子弹 速度慢 威力大
 		{ 
-
+			the->MaxSpeed = 100;
+			the->acceleration = 10000;
+			the->attack = 300;
+			the->direction = _direction;
+			the->Is_Enemy = _IsEnemy;
+			the->x = _x;
+			the->y = _y;
+			//根据起始半径修正x y
+			_direction.VectorToOne();
+			_direction*the->radius;
+			the->x += _direction.x;
+			the->y += _direction.y;
 		}
 		the->LoadResource();
 		return the;
@@ -328,8 +349,53 @@ public:
 class Enemy1:public spirit
 {
 public:
-	Enemy1(){}	
+	Enemy1(float _x,float _y)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_int_distribution<> dis(0, 2);
+		id = L"enemy1";
+		x = _x; y = _y;
+		MaxSpeed = 200;
+		acceleration = 400;
+		direction = vector2D(dis(mt) - 1,0.5 );
+		LoadResource();
+	}	
 	~Enemy1(){}
+	static void GroupAction(vector<spirit*>& Spirit_List,float deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_int_distribution<> dis(0, 600);
+		if(isTimeToCreate(deltatime))
+		{
+			Spirit_List.push_back(new Enemy1(dis(mt),0));
+		}
+
+	}
+	float getAngle()
+	{
+		return 180.f;
+	}
+	static bool isTimeToCreate(float  deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_real_distribution<> dis(0, 10);
+		static float random = dis(mt);
+		static float time = random;
+		if(time>=random)
+		{
+			time = 0;
+			random = dis(mt);
+			return true;
+		}
+		else
+		{
+			time += deltatime;
+			return false;
+		}
+	}
 	void action(float DeltaTime, int keydown)
 	{
 		spirit::action(DeltaTime, keydown);
@@ -338,8 +404,16 @@ public:
 		float right = 600.f + width;
 		float top = 0.f - height;
 		float bottom = 600.f + height;
-		if (x < left)hp = 0;
-		if (x > right)hp = 0;
+		if (x < 0+width/2)
+		{
+			direction.x=5;
+			
+		}
+		if (x > 600-width/2)
+		{
+			direction.x=-10;
+			
+		}
 		if (y < top) hp = 0;
 		if (y > bottom)hp = 0;
 	}
