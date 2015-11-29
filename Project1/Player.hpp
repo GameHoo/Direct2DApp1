@@ -36,10 +36,23 @@ public:
 		attack = 1000;        //飞机撞另一个物体伤害
 		isPlayers = true;
 	}
-   float getAngle()
+   /*float getAngle()
 	{
 		return 0.f;
-	}
+	}*/
+   bool shoot(wstring& bullet_ID, int& bullet_Number, int& bullet_Source_x, int& bullet_Source_y, bool bullet_IsEnemy,float deltatime)
+   {
+	   if(!isTimeToShoot(deltatime))
+	   {
+		   return false;
+	   }
+	   bullet_ID = L"bullet1";
+	   bullet_Number = ShootNumber;
+	   bullet_Source_x = x;
+	   bullet_Source_y = y;
+	   bullet_IsEnemy = false;
+	   return true;
+   }
   void action(vector<Spirit*>&Spirit_List, vector<Spirit*>::iterator &i,float DeltaTime,int keydown)
    {
 		direction = vector2D(0, 0);

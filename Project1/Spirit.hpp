@@ -142,6 +142,7 @@ public:
 		
 	}
 
+
 	void move(float DeltaTime)
 	{
 		if(direction.isZero())//没有方向
@@ -187,4 +188,5 @@ public:
 		}
 		return false;
 	}
+
 };

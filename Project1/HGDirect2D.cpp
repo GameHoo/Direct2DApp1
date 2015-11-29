@@ -66,85 +66,21 @@ void HGDirect2D::CreateDeviceResources()
 		}*/
 	}
 }
-void HGDirect2D::Init_LoadBMP()
-{
-	m_bmps.push_back(LoadBMP(L"file/ep_2.png"));
-	m_bmps.push_back(LoadBMP(L"file/myb_1.png"));
-	m_bmps.push_back(LoadBMP(L"file/ep_9.png"));
-	m_bmps.push_back(LoadBMP(L"file/BossBullet.png"));
-}
-ID2D1Bitmap* HGDirect2D::LoadBMP(wchar_t* FileName)
-{
-	IWICBitmapDecoder *pDecoder = NULL;
-	IWICBitmapFrameDecode *pSource = NULL;
-	IWICStream *pStream = NULL;
-	IWICFormatConverter *pConverter = NULL;
-	IWICBitmapScaler *pScaler = NULL;
-	ID2D1Bitmap *pBitmap = NULL;
 
 
-	m_WICFactory->CreateDecoderFromFilename(FileName,
-		0, GENERIC_READ, WICDecodeMetadataCacheOnLoad,
-		&pDecoder);
-	pDecoder->GetFrame(0, &pSource);
-	UINT originalWidth, originalHeight;
-	pSource->GetSize(&originalWidth, &originalHeight);
-	//double rate = originalWidth / (double)originalHeight;
-	/*
-	if (width > height)
-	{
-	width = static_cast<UINT>(height*rate);
-	}
-	else
-	{
-	height = static_cast<UINT>(width / rate);
-	}
-	*/
-	m_WICFactory->CreateBitmapScaler(&pScaler);
-	pScaler->Initialize(
-		pSource,
-		originalWidth,
-		originalHeight,
-		WICBitmapInterpolationModeCubic
-		);
 
-	m_WICFactory->CreateFormatConverter(&pConverter);
-	pConverter->Initialize(
-		pScaler,
-		GUID_WICPixelFormat32bppPBGRA,
-		WICBitmapDitherTypeNone,
-		NULL,
-		0.0,
-		WICBitmapPaletteTypeMedianCut
-		);
-	m_pRenderTarget->CreateBitmapFromWicBitmap(
-		pConverter,
-		NULL,
-		&pBitmap
-		);
-
-	SafeRelease(&pDecoder);
-	SafeRelease(&pSource);
-	SafeRelease(&pStream);
-	SafeRelease(&pConverter);
-	SafeRelease(&pScaler);
-	//SafeRelease(&pBitmap);
-	return pBitmap;
-}
-ID2D1Bitmap* HGDirect2D::GetBitmapFromSpirit(Spirit * spirit)
-{
-	return m_bmps[spirit->id];
-}
-void HGDirect2D::DrawSprit(Spirit* spirit)
+void HGDirect2D::DrawSprit(spirit* the)
 {
 	ID2D1Bitmap* pbitmap;
-	int width = spirit->size.width;
-	int height = spirit->size.height;
-	float x = spirit->x;
-	float y = spirit->y;
-	pbitmap = GetBitmapFromSpirit(spirit);
+	int width = the->width;
+	int height = the->height;
+	float x = the->x;
+	float y = the->y;
+	float angle = the->getAngle();
+	m_pRenderTarget->CreateBitmapFromWicBitmap(spirit::Resource[the->id],nullptr,&pbitmap);
+	
 	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(
-		spirit->getAngle(),
+		angle,
 		D2D1::Point2F(x, y)
 		));
 	m_pRenderTarget->DrawBitmap(
@@ -158,4 +94,5 @@ void HGDirect2D::DrawSprit(Spirit* spirit)
 
 		);
 	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+	pbitmap->Release();
 }
