@@ -33,7 +33,7 @@
     <ClCompile Include="GameTimer.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="spirits.hpp">
+    <ClCompile Include="sprites.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

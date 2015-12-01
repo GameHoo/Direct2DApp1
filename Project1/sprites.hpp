@@ -66,20 +66,33 @@ public:
 
 };
 
-class spirit
+class sprite
 {
 protected:
 	int hp;
 public:
-	spirit()
+	sprite()
 	{
 		hp = 1000;
+		Is_NoAttack = true;
 	}
-	~spirit() {}
+	~sprite() {}
 	
-	virtual void action(float DeltaTime,int keydown)
+	virtual void action(float DeltaTime,int keydown,vector<sprite*> sprite_List)
 	{
 		move(DeltaTime);
+		////碰撞检测
+		//for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end();i++)
+		//{
+		//	sprite* target=*i;
+		//	if(!target->Is_NoAttack&& IsEnemy(target))
+		//	{
+		//		if(attackTest(target))
+		//		{
+		//			target->hp -= attack;
+		//		}
+		//	}
+		//}
 	}
 	void getAttack(int attack)
 	{
@@ -154,10 +167,10 @@ public:
 	{
 		return false;
 	}
-	bool IsEnemy(spirit* target)
+	/*bool IsEnemy(sprite* target)
 	{
 		return target->Is_Enemy != Is_Enemy;
-	}
+	}*/
 	bool IsDead()
 	{
 		if (hp <= 0)
@@ -195,22 +208,22 @@ public:
 			}
 		}
 	}
-	bool attackTest(spirit* target)
-	{
-		if ((target->width / 2 + width / 2) > fabs(target->x - x) && (target->height / 2 + height / 2) > fabs(target->y - y))
-		{
-			return true;
-		}
-		return false;
-	}
+	//bool attackTest(sprite* target)
+	//{
+	//	if ((target->width / 2 + width / 2) > fabs(target->x - x) && (target->height / 2 + height / 2) > fabs(target->y - y))
+	//	{
+	//		return true;
+	//	}
+	//	return false;
+	//}
 };
-class player:public spirit
+class player:public sprite
 {
 public:
 	//飞机发射子弹频率 单位：   个/秒 
 	float ShootRate = 5;
 	//飞机一次发射子弹数量 1-5个
-	int ShootNumber = 1;
+	int ShootNumber = 37;
 	player()
 	{
 		x = 300; y = 500;
@@ -239,7 +252,7 @@ public:
 			time += deltatime; return false;
 		}
 	}
-	void action(float DeltaTime, int keydown)
+	void action(float DeltaTime, int keydown, vector<sprite*> sprite_List)
 	{
 		direction = vector2D(0, 0);
 		if (keydown & 1)
@@ -258,7 +271,7 @@ public:
 		{
 			direction.x += 1;
 		}
-		spirit::action( DeltaTime,keydown);
+		sprite::action( DeltaTime,keydown, sprite_List);
 		//移动范围限制
 		float left = 0.f + width / 2;
 		float right = 600.f - width / 2;
@@ -270,7 +283,7 @@ public:
 		if (y > bottom)y = bottom;
 		
 	}
-	virtual bool shoot(wstring& bullet_ID, int& bullet_Number, bool &bullet_IsEnemy, float deltatime)
+	 bool shoot(wstring& bullet_ID, int& bullet_Number, bool &bullet_IsEnemy, float deltatime)
 	{
 		if(isTimeToShoot(deltatime))
 		{
@@ -282,38 +295,105 @@ public:
 		return false;
 	}
 };
-class bullet:public spirit
+class bullet:public sprite
 {
 private:
-	bullet() {}
+	
 public:
 	//发射起始半径
 	float radius;
+	bullet() {}
 	~bullet() {}
-	static bullet* CreatBullet(wstring _id,vector2D _direction,float _x,float _y,bool _IsEnemy=false)
+	//static bullet* CreatBullet(wstring _id,vector2D _direction,float _x,float _y,bool _IsEnemy=false)
+	//{
+	//	bullet* the = nullptr;
+	//	the = new bullet();
+	//	the->radius = 30.f;
+	//	the->id = _id;
+	//	if(the->id==L"bullet1")//普通子弹
+	//	{
+	//		
+	//		the->MaxSpeed = 500;
+	//		the->acceleration = 10000;
+	//		the->attack = 100;
+	//		the->direction = _direction;
+	//		the->Is_Enemy = _IsEnemy;
+	//		the-> x= _x;
+	//		the->y = _y;
+	//		//根据起始半径修正x y
+	//		_direction.VectorToOne();
+	//		_direction*the->radius;
+	//		the->x += _direction.x;
+	//		the->y += _direction.y;
+	//	}
+	//	else if (the->id == L"bullet2")//大圆子弹 速度慢 威力大
+	//	{ 
+	//		the->MaxSpeed = 100;
+	//		the->acceleration = 10000;
+	//		the->attack = 300;
+	//		the->direction = _direction;
+	//		the->Is_Enemy = _IsEnemy;
+	//		the->x = _x;
+	//		the->y = _y;
+	//		//根据起始半径修正x y
+	//		_direction.VectorToOne();
+	//		_direction*the->radius;
+	//		the->x += _direction.x;
+	//		the->y += _direction.y;
+	//	}
+	//	the->LoadResource();
+	//	return the;
+	//}
+
+	
+	void action(float DeltaTime,int keydown, vector<sprite*> sprite_List)
+	{
+		sprite::action(DeltaTime,keydown, sprite_List);
+		//移动范围限制
+		float left = 0.f - width ;
+		float right = 600.f + width;
+		float top = 0.f - height;
+		float bottom = 600.f + height;
+		if (x < left)hp = 0;
+		if (x > right)hp = 0;
+		if (y < top) hp = 0;
+		if (y > bottom)hp = 0;
+	}
+};
+class Tracking_bullets
+{
+	
+};
+class bulletFactory
+{
+public:
+	bulletFactory(){}
+	~bulletFactory(){}
+	static sprite* CreatBullet(wstring _id, vector2D _direction, float _x, float _y, bool _IsEnemy = false)
 	{
 		bullet* the = nullptr;
 		the = new bullet();
 		the->radius = 30.f;
 		the->id = _id;
-		if(the->id==L"bullet1")//普通子弹
+		if (the->id == L"bullet1")//普通子弹
 		{
-			
+
 			the->MaxSpeed = 500;
 			the->acceleration = 10000;
 			the->attack = 100;
 			the->direction = _direction;
 			the->Is_Enemy = _IsEnemy;
-			the-> x= _x;
+			the->x = _x;
 			the->y = _y;
 			//根据起始半径修正x y
 			_direction.VectorToOne();
 			_direction*the->radius;
 			the->x += _direction.x;
 			the->y += _direction.y;
+			the->Is_NoAttack = false;
 		}
 		else if (the->id == L"bullet2")//大圆子弹 速度慢 威力大
-		{ 
+		{
 			the->MaxSpeed = 100;
 			the->acceleration = 10000;
 			the->attack = 300;
@@ -326,27 +406,14 @@ public:
 			_direction*the->radius;
 			the->x += _direction.x;
 			the->y += _direction.y;
+			the->Is_NoAttack = true;
 		}
 		the->LoadResource();
 		return the;
 	}
-
-	
-	void action(float DeltaTime,int keydown)
-	{
-		spirit::action(DeltaTime,keydown);
-		//移动范围限制
-		float left = 0.f - width ;
-		float right = 600.f + width;
-		float top = 0.f - height;
-		float bottom = 600.f + height;
-		if (x < left)hp = 0;
-		if (x > right)hp = 0;
-		if (y < top) hp = 0;
-		if (y > bottom)hp = 0;
-	}
 };
-class Enemy1:public spirit
+
+class Enemy1:public sprite
 {
 public:
 	Enemy1(float _x,float _y)
@@ -359,17 +426,49 @@ public:
 		MaxSpeed = 200;
 		acceleration = 400;
 		direction = vector2D(dis(mt) - 1,0.5 );
+		Is_Enemy = true;
+		Is_NoAttack = false;
 		LoadResource();
 	}	
 	~Enemy1(){}
-	static void GroupAction(vector<spirit*>& Spirit_List,float deltatime)
+	bool shoot(wstring& bullet_ID, int& bullet_Number, bool &bullet_IsEnemy, float deltatime)
+	{
+		if (isTimeToShoot(deltatime))
+		{
+			bullet_ID = L"bullet2";
+			bullet_Number = 1;
+			bullet_IsEnemy = Is_Enemy;
+			return true;
+		}
+		return false;
+	}
+	bool isTimeToShoot(float deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_real_distribution<> dis(0, 10);
+		static float random = dis(mt);
+		static float time = random;
+		if (time >= random)
+		{
+			random = dis(mt);
+			time = 0; 
+			return true;
+		}
+		else
+		{
+			time += deltatime; 
+			return false;
+		}
+	}
+	static void GroupAction(vector<sprite*>& sprite_List,float deltatime)
 	{
 		std::random_device rd;
 		std::mt19937 mt(rd());
 		std::uniform_int_distribution<> dis(0, 600);
 		if(isTimeToCreate(deltatime))
 		{
-			Spirit_List.push_back(new Enemy1(dis(mt),0));
+			sprite_List.push_back(new Enemy1(dis(mt),0));
 		}
 
 	}
@@ -381,7 +480,7 @@ public:
 	{
 		std::random_device rd;
 		std::mt19937 mt(rd());
-		std::uniform_real_distribution<> dis(0, 10);
+		std::uniform_real_distribution<> dis(0, 5);
 		static float random = dis(mt);
 		static float time = random;
 		if(time>=random)
@@ -396,9 +495,9 @@ public:
 			return false;
 		}
 	}
-	void action(float DeltaTime, int keydown)
+	void action(float DeltaTime, int keydown, vector<sprite*> sprite_List)
 	{
-		spirit::action(DeltaTime, keydown);
+		sprite::action(DeltaTime, keydown, sprite_List);
 		//移动范围限制
 		float left = 0.f - width;
 		float right = 600.f + width;

@@ -1,23 +1,24 @@
+//头文件
 #include<iostream>
 #include<stdio.h>
 #include"HGWindow.h"
 #include "HGDirect2D.h"
 #include "HGInput.h"
 #include"GameTimer.hpp"
-#include "spirits.hpp"
+#include "sprites.hpp"
 #include<Windows.h>
 #include <sstream>
 #include <vector>
 #include<random>
 using namespace std;
-
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-//是否到时间生成敌机1
-bool isTimeToEnemy1(float deltatime);
+//函数声明
+bool attackTest(sprite* target1, sprite* target2);
+bool IsEnemy(sprite* target1, sprite* target2);
 void CalculateFPS();
 void Render();
 void Update(float Delta);
+//窗口大小
 int width = 800;
 int height = 600;
 HGWindow theWindow;
@@ -25,25 +26,21 @@ HGDirect2D theDirect2D;
 HGInput theInput;
 GameTimer theTimer;
 //精灵列表
-vector<spirit*> Spirit_List;
+vector<sprite*> sprite_List;
 bool isRun = true;
-random_device rd;
-mt19937 mt(rd());
 map<wstring, IWICFormatConverter*> temp;
-map<wstring, IWICFormatConverter*> &spirit::Resource = temp;
+map<wstring, IWICFormatConverter*> &sprite::Resource = temp;
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
 	_In_ int       nCmdShow)
 {
-	
 	theWindow.HG_Init_Window(L"雷霆战机", WndProc, hInstance, nCmdShow, width, height);
 	theDirect2D.Init(theWindow.getHwnd());
 	theInput.init(hInstance, theWindow.getHwnd());
 	theTimer.Reset();
 	//生成玩家
-	Spirit_List.push_back(new player());
-
+	sprite_List.push_back(new player());
 	MSG msg;
 	while (true)
 	{
@@ -63,12 +60,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			theTimer.Tick();
 		}
 	}
-	//_CrtDumpMemoryLeaks();
 	return 0;
 }
 //逻辑计算
 void Update(float Delta)
 {
+	CalculateFPS();
 	//获取用户输入
 	int keydown = 0;
 	if(theInput.isKeyDown(DIK_UPARROW))
@@ -87,24 +84,23 @@ void Update(float Delta)
 	{
 		keydown += 8;
 	}
-	
-	//发子弹要填的参数
+	//发子弹
 	wstring bullet_ID;
 	int bullet_Number;
 	bool bullet_IsEnemy;
-	int angle_add = 20;//多个子弹发射角度增量
-	for (vector<spirit*>::iterator i=Spirit_List.begin(); i !=Spirit_List.end();i=i+1)
+	int angle_add = 10;//多个子弹发射角度增量
+	for (vector<sprite*>::iterator i=sprite_List.begin(); i !=sprite_List.end();i=i+1)
 	{
-		spirit* the = *i;
-		the->action(theTimer.DeltaTime(), keydown);
+		sprite* the = *i;
+		the->action(theTimer.DeltaTime(), keydown,sprite_List);
 		//发射子弹
 		if(the->shoot(bullet_ID,bullet_Number, bullet_IsEnemy,theTimer.DeltaTime()))
 		{
 			
 			if(bullet_Number&1) //奇数 中间发射子弹
 			{
-				spirit* a_bullet = bullet::CreatBullet(bullet_ID, vector2D::AngleToVector(the->getAngle()), the->x, the->y, bullet_IsEnemy);
-				i=Spirit_List.insert(i,a_bullet);
+				sprite* a_bullet = bulletFactory::CreatBullet(bullet_ID, vector2D::AngleToVector(the->getAngle()), the->x, the->y, bullet_IsEnemy);
+				i=sprite_List.insert(i,a_bullet);
 				i++;
 				bullet_Number--;
 			}
@@ -116,13 +112,13 @@ void Update(float Delta)
 				{
 					bullet_angle = the->getAngle() + add;
 					bullet_angle = (int)(bullet_angle + 360) % 360;
-					i = Spirit_List.insert(i, bullet::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
+					i = sprite_List.insert(i, bulletFactory::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
 					i++; 
 				}
 				{//left
 					bullet_angle = the->getAngle() -  add;
 					bullet_angle = (int)(bullet_angle + 360) % 360;
-					i = Spirit_List.insert(i, bullet::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
+					i = sprite_List.insert(i, bulletFactory::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
 					i++;
 				}
 				
@@ -132,15 +128,11 @@ void Update(float Delta)
 		}
 	}
 	//Group Action
-	Enemy1::GroupAction(Spirit_List, theTimer.DeltaTime());
-	
-	
-	
-	
+	Enemy1::GroupAction(sprite_List, theTimer.DeltaTime());
 	//删除HP=0的精灵
-	for (vector<spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end();)
+	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end();)
 	{
-		spirit* temp = *i;
+		sprite* temp = *i;
 		if(temp->IsDead())
 		{
 			if(temp->id==L"player")//游戏结束
@@ -150,7 +142,7 @@ void Update(float Delta)
 			else
 			{
 				delete temp;
-				i = Spirit_List.erase(i);
+				i = sprite_List.erase(i);
 			}
 			
 		}
@@ -160,9 +152,23 @@ void Update(float Delta)
 		}
 	}
 }
-
-
-
+//碰撞检测
+bool attackTest(sprite* target1,sprite* target2)
+{
+	if ((target1->width / 2 + target2->width / 2) > fabs(target1->x - target2->x) && (target1->height / 2 + target2->height / 2) > fabs(target1->y - target2->y))
+	{
+		return true;
+	}
+	return false;
+}
+bool IsEnemy(sprite* target1,sprite* target2)
+{
+	return target1->Is_Enemy != target2->Is_Enemy;
+}
+void shoot()
+{
+	
+}
 void Render()
 {
 	
@@ -180,9 +186,9 @@ void Render()
 	
 	
 	//画出每个精灵
-	for (vector<spirit*>::iterator i = Spirit_List.begin(); i != Spirit_List.end(); i++)
+	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end(); i++)
 	{
-		spirit* temp = *i;
+		sprite* temp = *i;
 		//RenderTarget->BeginDraw();
 		theDirect2D.DrawSprit(temp);
 		//RenderTarget->EndDraw();

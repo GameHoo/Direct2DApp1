@@ -69,7 +69,7 @@ void HGDirect2D::CreateDeviceResources()
 
 
 
-void HGDirect2D::DrawSprit(spirit* the)
+void HGDirect2D::DrawSprit(sprite* the)
 {
 	ID2D1Bitmap* pbitmap;
 	int width = the->width;
@@ -77,7 +77,7 @@ void HGDirect2D::DrawSprit(spirit* the)
 	float x = the->x;
 	float y = the->y;
 	float angle = the->getAngle();
-	m_pRenderTarget->CreateBitmapFromWicBitmap(spirit::Resource[the->id],nullptr,&pbitmap);
+	m_pRenderTarget->CreateBitmapFromWicBitmap(sprite::Resource[the->id],nullptr,&pbitmap);
 	
 	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(
 		angle,

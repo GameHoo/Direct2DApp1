@@ -12,10 +12,10 @@ ID2D1Factory RenderTarget
 #include<wincodec.h>
 #pragma comment(lib, "Windowscodecs.lib" )
 #include<vector>
-#include "spirits.hpp"
+#include "sprites.hpp"
 #include <sstream>
 #include <string>
-
+#include<map>
 using namespace std;
 class HGDirect2D
 {
@@ -71,6 +71,6 @@ public:
 	}
 	
 
-	void DrawSprit(spirit* spirit);
+	void DrawSprit(sprite* sprite);
 	
 };
