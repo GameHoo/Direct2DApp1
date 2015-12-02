@@ -33,7 +33,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -123,16 +123,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GameTimer.hpp" />
-    <ClCompile Include="HGDirect2D.cpp" />
-    <ClCompile Include="HGInput.cpp" />
     <ClCompile Include="sprites.hpp" />
     <ClCompile Include="HGWindow.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HGDirect2D.h" />
-    <ClInclude Include="HGInput.h" />
-    <ClInclude Include="HGWindow.h" />
+    <ClInclude Include="support.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="file\bullet1.png" />

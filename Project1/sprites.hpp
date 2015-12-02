@@ -8,7 +8,12 @@
 #include<vector>
 #include<random>
 using namespace std;
-
+struct Shoot_Info
+{
+	int Shoot_Style;//0扇形 1平行
+	int Shoot_number;
+	bool Have_FollowBullet;
+};
 class vector2D
 {
 public:
@@ -65,7 +70,6 @@ public:
 	}
 
 };
-
 class sprite
 {
 protected:
@@ -78,7 +82,7 @@ public:
 	}
 	~sprite() {}
 	
-	virtual void action(float DeltaTime,int keydown,vector<sprite*> sprite_List)
+	virtual void action(vector<sprite*>&sprite_List,float DeltaTime,int keydown)
 	{
 		move(DeltaTime);
 		////碰撞检测
@@ -163,7 +167,7 @@ public:
 	{
 		return speed.VecoterToAngle();
 	}
-	virtual bool shoot(wstring& bullet_ID,int& bullet_Number, bool &bullet_IsEnemy,float deltatime)
+	virtual bool shoot(Shoot_Info&info,float deltatime)
 	{
 		return false;
 	}
@@ -224,6 +228,7 @@ public:
 	float ShootRate = 5;
 	//飞机一次发射子弹数量 1-5个
 	int ShootNumber = 37;
+	bool Have_Follow_bullet = false;
 	player()
 	{
 		x = 300; y = 500;
@@ -252,7 +257,7 @@ public:
 			time += deltatime; return false;
 		}
 	}
-	void action(float DeltaTime, int keydown, vector<sprite*> sprite_List)
+	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
 	{
 		direction = vector2D(0, 0);
 		if (keydown & 1)
@@ -271,7 +276,7 @@ public:
 		{
 			direction.x += 1;
 		}
-		sprite::action( DeltaTime,keydown, sprite_List);
+		sprite::action(sprite_List, DeltaTime, keydown);
 		//移动范围限制
 		float left = 0.f + width / 2;
 		float right = 600.f - width / 2;
@@ -283,13 +288,13 @@ public:
 		if (y > bottom)y = bottom;
 		
 	}
-	 bool shoot(wstring& bullet_ID, int& bullet_Number, bool &bullet_IsEnemy, float deltatime)
+	 bool shoot(Shoot_Info&info, float deltatime)
 	{
 		if(isTimeToShoot(deltatime))
 		{
-			bullet_ID = L"bullet1";
-			bullet_Number = ShootNumber;
-			bullet_IsEnemy = Is_Enemy;
+			info.Have_FollowBullet = Have_Follow_bullet;
+			info.Shoot_number = ShootNumber;
+			info.Shoot_Style = 1;
 			return true;
 		}
 		return false;
@@ -346,9 +351,9 @@ public:
 	//}
 
 	
-	void action(float DeltaTime,int keydown, vector<sprite*> sprite_List)
+	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
 	{
-		sprite::action(DeltaTime,keydown, sprite_List);
+		sprite::action(sprite_List, DeltaTime, keydown);
 		//移动范围限制
 		float left = 0.f - width ;
 		float right = 600.f + width;
@@ -360,7 +365,7 @@ public:
 		if (y > bottom)hp = 0;
 	}
 };
-class Tracking_bullets
+class Tracking_bullet
 {
 	
 };
@@ -412,7 +417,6 @@ public:
 		return the;
 	}
 };
-
 class Enemy1:public sprite
 {
 public:
@@ -431,13 +435,13 @@ public:
 		LoadResource();
 	}	
 	~Enemy1(){}
-	bool shoot(wstring& bullet_ID, int& bullet_Number, bool &bullet_IsEnemy, float deltatime)
+	bool shoot(Shoot_Info&info, float deltatime)
 	{
 		if (isTimeToShoot(deltatime))
 		{
-			bullet_ID = L"bullet2";
-			bullet_Number = 1;
-			bullet_IsEnemy = Is_Enemy;
+			info.Have_FollowBullet=false;
+			info.Shoot_number = 1;
+			info.Shoot_Style = 0;
 			return true;
 		}
 		return false;
@@ -495,9 +499,9 @@ public:
 			return false;
 		}
 	}
-	void action(float DeltaTime, int keydown, vector<sprite*> sprite_List)
+	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
 	{
-		sprite::action(DeltaTime, keydown, sprite_List);
+		sprite::action(sprite_List, DeltaTime, keydown);
 		//移动范围限制
 		float left = 0.f - width;
 		float right = 600.f + width;

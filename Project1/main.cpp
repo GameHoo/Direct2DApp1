@@ -1,46 +1,47 @@
-//头文件
-#include<iostream>
-#include<stdio.h>
-#include"HGWindow.h"
-#include "HGDirect2D.h"
-#include "HGInput.h"
+#include<Windows.h>
+#include"support.hpp"
 #include"GameTimer.hpp"
 #include "sprites.hpp"
-#include<Windows.h>
 #include <sstream>
 #include <vector>
 #include<random>
+#include<map>
 using namespace std;
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+/////////////////////////////////////////////////////////////////////////////////////////
 //函数声明
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+void shoot(sprite* the, Shoot_Info info, vector<sprite*>::iterator& i);
 bool attackTest(sprite* target1, sprite* target2);
 bool IsEnemy(sprite* target1, sprite* target2);
 void CalculateFPS();
 void Render();
 void Update(float Delta);
-//窗口大小
+void DrawSprit(sprite* the);
+void init(HINSTANCE hInstance, int nCmdShow);
+/////////////////////////////////////////////////////////////////////////////////////////
+//全局变量
+HWND hwnd;
 int width = 800;
 int height = 600;
-HGWindow theWindow;
-HGDirect2D theDirect2D;
+sprite* player1;
 HGInput theInput;
 GameTimer theTimer;
-//精灵列表
 vector<sprite*> sprite_List;
 bool isRun = true;
+ID2D1RenderTarget* RenderTarget;
 map<wstring, IWICFormatConverter*> temp;
 map<wstring, IWICFormatConverter*> &sprite::Resource = temp;
+//////////////////////////////////////////////////////////////////////////////////////////
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
 	_In_ int       nCmdShow)
 {
-	theWindow.HG_Init_Window(L"雷霆战机", WndProc, hInstance, nCmdShow, width, height);
-	theDirect2D.Init(theWindow.getHwnd());
-	theInput.init(hInstance, theWindow.getHwnd());
-	theTimer.Reset();
+	init(hInstance,nCmdShow);
 	//生成玩家
-	sprite_List.push_back(new player());
+	player1= new player();
+	sprite_List.push_back(player1);
 	MSG msg;
 	while (true)
 	{
@@ -63,88 +64,46 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	return 0;
 }
 //逻辑计算
-void Update(float Delta)
+void Update(float deltatime)
 {
 	CalculateFPS();
 	//获取用户输入
 	int keydown = 0;
-	if(theInput.isKeyDown(DIK_UPARROW))
+	theInput.Keyboards_Read();
+	if(theInput.keyDown(DIK_UPARROW))
 	{
 		keydown += 1;
 	}
-	if(theInput.isKeyDown(DIK_DOWNARROW))
+	if (theInput.keyDown(DIK_DOWNARROW))
 	{
 		keydown += 2;	
 	}
-	if (theInput.isKeyDown(DIK_LEFTARROW))
+	if (theInput.keyDown(DIK_LEFTARROW))
 	{
 		keydown += 4;	
 	}
-	if (theInput.isKeyDown(DIK_RIGHTARROW))
+	if (theInput.keyDown(DIK_RIGHTARROW))
 	{
 		keydown += 8;
-	}
-	//发子弹
-	wstring bullet_ID;
-	int bullet_Number;
-	bool bullet_IsEnemy;
-	int angle_add = 10;//多个子弹发射角度增量
+	}	
+	
 	for (vector<sprite*>::iterator i=sprite_List.begin(); i !=sprite_List.end();i=i+1)
 	{
 		sprite* the = *i;
-		the->action(theTimer.DeltaTime(), keydown,sprite_List);
-		//发射子弹
-		if(the->shoot(bullet_ID,bullet_Number, bullet_IsEnemy,theTimer.DeltaTime()))
-		{
-			
-			if(bullet_Number&1) //奇数 中间发射子弹
-			{
-				sprite* a_bullet = bulletFactory::CreatBullet(bullet_ID, vector2D::AngleToVector(the->getAngle()), the->x, the->y, bullet_IsEnemy);
-				i=sprite_List.insert(i,a_bullet);
-				i++;
-				bullet_Number--;
-			}
-			int left_or_Right = 0;//0 left 1 right
-			int add = angle_add;
-			while (bullet_Number)
-			{
-				float bullet_angle;//right
-				{
-					bullet_angle = the->getAngle() + add;
-					bullet_angle = (int)(bullet_angle + 360) % 360;
-					i = sprite_List.insert(i, bulletFactory::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
-					i++; 
-				}
-				{//left
-					bullet_angle = the->getAngle() -  add;
-					bullet_angle = (int)(bullet_angle + 360) % 360;
-					i = sprite_List.insert(i, bulletFactory::CreatBullet(bullet_ID, vector2D::AngleToVector(bullet_angle), the->x, the->y, bullet_IsEnemy));
-					i++;
-				}
-				
-				bullet_Number = bullet_Number - 2;
-				add +=angle_add;
-			}
-		}
+		the->action(sprite_List, deltatime, keydown);
+		Shoot_Info info;
+		if(the->shoot(info, deltatime))shoot(the, info,i);
 	}
 	//Group Action
 	Enemy1::GroupAction(sprite_List, theTimer.DeltaTime());
 	//删除HP=0的精灵
-	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end();)
+	for (vector<sprite*>::iterator i = sprite_List.begin()+1; i != sprite_List.end();)
 	{
 		sprite* temp = *i;
 		if(temp->IsDead())
 		{
-			if(temp->id==L"player")//游戏结束
-			{
-				i++;
-			}
-			else
-			{
-				delete temp;
-				i = sprite_List.erase(i);
-			}
-			
+			delete temp;
+			i = sprite_List.erase(i);
 		}
 		else
 		{
@@ -165,38 +124,27 @@ bool IsEnemy(sprite* target1,sprite* target2)
 {
 	return target1->Is_Enemy != target2->Is_Enemy;
 }
-void shoot()
-{
-	
-}
 void Render()
 {
-	
-	ID2D1RenderTarget* RenderTarget = static_cast<ID2D1RenderTarget*>(theDirect2D.m_pRenderTarget);
 	ID2D1SolidColorBrush *brush1;
-
 	RenderTarget->CreateSolidColorBrush(
 		D2D1::ColorF(D2D1::ColorF(0xececee)),
 		&brush1
 		);
-
 	RenderTarget->BeginDraw();
 	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0xacd0ce)));
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-	
-	
 	//画出每个精灵
 	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end(); i++)
 	{
 		sprite* temp = *i;
 		//RenderTarget->BeginDraw();
-		theDirect2D.DrawSprit(temp);
+		DrawSprit(temp);
 		//RenderTarget->EndDraw();
 	}
 	//绘制菜单
 	RenderTarget->DrawLine(D2D1::Point2F(700.f, 0.f),
-		D2D1::Point2F(700.f, 600.f), brush1, 200.f);
-
+	D2D1::Point2F(700.f, 600.f), brush1, 200.f);
 	RenderTarget->EndDraw();
 }
 //计算FPS
@@ -215,7 +163,7 @@ void CalculateFPS()
 		outs << L"雷霆战机" << L"   "
 			<< L"FPS: " << fps << L"   "
 			<< L"Frame Time:" << mspf << L"(ms)";
-		SetWindowText(theWindow.getHwnd(), outs.str().c_str());
+		SetWindowText(hwnd, outs.str().c_str());
 		frameCnt = 0;
 		timeElapsed += 1.0f;
 	}
@@ -241,7 +189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_PAINT:
 	{
- 	   ValidateRect(theWindow.getHwnd(), nullptr);
+ 	   ValidateRect(hwnd, nullptr);
 	}
 	break;
 	case WM_DESTROY:
@@ -256,4 +204,86 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	}
 	return 0;
+}
+void DrawSprit(sprite* the)
+{
+	static map<IWICFormatConverter*, ID2D1Bitmap*> BMP_STORE;
+	ID2D1Bitmap* pbitmap;
+	int width = the->width;
+	int height = the->height;
+	float x = the->x;
+	float y = the->y;
+	float angle = the->getAngle();
+	if(BMP_STORE.find(sprite::Resource[the->id])==BMP_STORE.end())
+	{
+		RenderTarget->CreateBitmapFromWicBitmap(sprite::Resource[the->id], nullptr, &pbitmap);
+		BMP_STORE[sprite::Resource[the->id]] = pbitmap;
+	}
+	else
+	{
+		pbitmap = BMP_STORE[sprite::Resource[the->id]];
+	}
+	RenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(
+		angle,
+		D2D1::Point2F(x, y)
+		));
+	RenderTarget->DrawBitmap(
+		pbitmap,
+		D2D1::RectF(
+			x - width / 2,
+			y - height / 2,
+			x + width / 2,
+			y + height / 2
+			));
+	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());}
+void init(HINSTANCE hInstance,int nCmdShow)
+{
+	hwnd = CreateMyWindow(hInstance, WndProc, nCmdShow, L"雷霆战机", width, height);
+	theInput.init(hInstance, hwnd);
+	theTimer.Reset();
+	RenderTarget = CreateRenderTarget(hwnd);
+}
+void shoot(sprite* the, Shoot_Info info,vector<sprite*>::iterator& i)
+{
+	if (info.Shoot_Style == 0)//扇形
+	{
+		if (info.Shoot_number& 1) //奇数 中间发射子弹
+		{
+			sprite* a_bullet = bulletFactory::CreatBullet(L"bullet2", vector2D::AngleToVector(the->getAngle()), the->x, the->y, the->Is_Enemy);
+			i=sprite_List.insert(i+1, a_bullet);
+			//i++;
+			info.Shoot_number--;
+		}
+		int radius = 25;
+		int angle_add = 10;
+		int left_or_Right = 0;//0 left 1 right
+		int add = angle_add;
+		while (info.Shoot_number)
+		{
+			float bullet_angle;//right
+			{
+				bullet_angle = the->getAngle() + add;
+				bullet_angle = (int)(bullet_angle + 360) % 360;
+				vector2D direction = vector2D::AngleToVector(bullet_angle);
+				direction.VectorToOne();
+				i = sprite_List.insert(i+1, bulletFactory::CreatBullet(L"bullet2", direction, the->x+direction.x, the->y+direction.y, the->Is_Enemy));
+				//i++;
+			}
+			{//left
+				bullet_angle = the->getAngle() - add;
+				bullet_angle = (int)(bullet_angle + 360) % 360;
+				vector2D direction = vector2D::AngleToVector(bullet_angle);
+				direction.VectorToOne();
+				i = sprite_List.insert(i+1, bulletFactory::CreatBullet(L"bullet2", direction, the->x + direction.x, the->y + direction.y, the->Is_Enemy));
+				//i++;
+			}
+
+			info.Shoot_number = info.Shoot_number - 2;
+			add += angle_add;
+		}
+	}
+	else
+	{
+
+	}
 }

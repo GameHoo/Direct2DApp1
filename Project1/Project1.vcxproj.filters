@@ -24,12 +24,6 @@
     <ClCompile Include="HGWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HGDirect2D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HGInput.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GameTimer.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -38,13 +32,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HGDirect2D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HGWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HGInput.h">
+    <ClInclude Include="support.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
