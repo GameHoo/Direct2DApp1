@@ -8,11 +8,18 @@
 #include<vector>
 #include<random>
 using namespace std;
+
 struct Shoot_Info
 {
 	int Shoot_Style;//0扇形 1平行
 	int Shoot_number;
 	bool Have_FollowBullet;
+};
+struct BMP_Info
+{
+	IWICFormatConverter* Converter;
+	int width;
+	int height;
 };
 class vector2D
 {
@@ -72,41 +79,28 @@ public:
 };
 class sprite
 {
-protected:
-	int hp;
+
 public:
+	int hp;
 	sprite()
 	{
 		hp = 1000;
-		Is_NoAttack = true;
+		CantBeAttack = true;
 	}
 	~sprite() {}
 	
 	virtual void action(vector<sprite*>&sprite_List,float DeltaTime,int keydown)
 	{
 		move(DeltaTime);
-		////碰撞检测
-		//for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end();i++)
-		//{
-		//	sprite* target=*i;
-		//	if(!target->Is_NoAttack&& IsEnemy(target))
-		//	{
-		//		if(attackTest(target))
-		//		{
-		//			target->hp -= attack;
-		//		}
-		//	}
-		//}
-	}
-	void getAttack(int attack)
-	{
-		if(!Is_NoAttack)
-		{
-			hp -= attack;
-		}
 	}
 	 void LoadResource()
 	{
+		if (Resource.find(id) != Resource.end())
+		{
+			width = Resource[id].width;
+			height = Resource[id].height;
+			return;
+		}
 		IWICImagingFactory* WICFactory;
 		IWICBitmapDecoder *pDecoder = NULL;
 		IWICBitmapFrameDecode *pSource = NULL;
@@ -127,6 +121,8 @@ public:
 		UINT originalWidth, originalHeight;
 		pSource->GetSize(&originalWidth, &originalHeight);
 		width = originalWidth; height = originalHeight;
+		Resource[id].width = width;
+		Resource[id].height = height;
 		WICFactory->CreateBitmapScaler(&pScaler);
 		pScaler->Initialize(
 			pSource,
@@ -143,15 +139,15 @@ public:
 			0.0,
 			WICBitmapPaletteTypeMedianCut
 			);
-		Resource[id] = pConverter;
+		Resource[id].Converter = pConverter;
 		WICFactory->Release();
 		pDecoder->Release();
 		pSource->Release();
 		//pStream->Release();
 		pScaler->Release();
 	}
-	static map<wstring, IWICFormatConverter*>& Resource;
-	bool Is_NoAttack;
+	static map<wstring, BMP_Info>& Resource;
+	bool CantBeAttack;
 	bool Is_Enemy;
 	vector2D speed;
 	float MaxSpeed;
@@ -175,14 +171,7 @@ public:
 	{
 		return target->Is_Enemy != Is_Enemy;
 	}*/
-	bool IsDead()
-	{
-		if (hp <= 0)
-		{
-			return true;
-		}
-		return false;
-	}
+
 
 	void move(float DeltaTime)
 	{
@@ -212,23 +201,16 @@ public:
 			}
 		}
 	}
-	//bool attackTest(sprite* target)
-	//{
-	//	if ((target->width / 2 + width / 2) > fabs(target->x - x) && (target->height / 2 + height / 2) > fabs(target->y - y))
-	//	{
-	//		return true;
-	//	}
-	//	return false;
-	//}
+
 };
 class player:public sprite
 {
 public:
 	//飞机发射子弹频率 单位：   个/秒 
-	float ShootRate = 5;
+	float ShootRate = 20;
 	//飞机一次发射子弹数量 1-5个
-	int ShootNumber = 37;
-	bool Have_Follow_bullet = false;
+	int ShootNumber = 5;
+	bool Have_Follow_bullet = true;
 	player()
 	{
 		x = 300; y = 500;
@@ -305,50 +287,9 @@ class bullet:public sprite
 private:
 	
 public:
-	//发射起始半径
-	float radius;
 	bullet() {}
 	~bullet() {}
-	//static bullet* CreatBullet(wstring _id,vector2D _direction,float _x,float _y,bool _IsEnemy=false)
-	//{
-	//	bullet* the = nullptr;
-	//	the = new bullet();
-	//	the->radius = 30.f;
-	//	the->id = _id;
-	//	if(the->id==L"bullet1")//普通子弹
-	//	{
-	//		
-	//		the->MaxSpeed = 500;
-	//		the->acceleration = 10000;
-	//		the->attack = 100;
-	//		the->direction = _direction;
-	//		the->Is_Enemy = _IsEnemy;
-	//		the-> x= _x;
-	//		the->y = _y;
-	//		//根据起始半径修正x y
-	//		_direction.VectorToOne();
-	//		_direction*the->radius;
-	//		the->x += _direction.x;
-	//		the->y += _direction.y;
-	//	}
-	//	else if (the->id == L"bullet2")//大圆子弹 速度慢 威力大
-	//	{ 
-	//		the->MaxSpeed = 100;
-	//		the->acceleration = 10000;
-	//		the->attack = 300;
-	//		the->direction = _direction;
-	//		the->Is_Enemy = _IsEnemy;
-	//		the->x = _x;
-	//		the->y = _y;
-	//		//根据起始半径修正x y
-	//		_direction.VectorToOne();
-	//		_direction*the->radius;
-	//		the->x += _direction.x;
-	//		the->y += _direction.y;
-	//	}
-	//	the->LoadResource();
-	//	return the;
-	//}
+
 
 	
 	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
@@ -365,9 +306,47 @@ public:
 		if (y > bottom)hp = 0;
 	}
 };
-class Tracking_bullet
+class Tracking_bullet:public sprite
 {
-	
+public:
+	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
+	{
+		int nearest_position_x ;
+		int nearest_position_y;
+		int nearest_position_distace = INT_MAX;
+		for (vector<sprite*>::iterator i = sprite_List.begin()+1; i != sprite_List.end();i++)
+		{
+			sprite* temp = *i;
+			if (!temp->CantBeAttack)
+			{
+				if (temp->Is_Enemy != Is_Enemy)
+				{
+					int distance = (temp->x - x)*(temp->x - x) + (temp->y - y)*(temp->y - y);
+					if (distance < nearest_position_distace)
+					{
+						nearest_position_x = temp->x;
+						nearest_position_y = temp->y;
+						nearest_position_distace = distance;
+					}
+				}
+			}
+		}
+		if(nearest_position_distace!=INT_MAX)
+		{
+			direction = vector2D(nearest_position_x - x, nearest_position_y - y);
+			direction.VectorToOne();
+		}
+		sprite::action(sprite_List, DeltaTime, keydown);
+		//移动范围限制
+		float left = 0.f - width;
+		float right = 600.f + width;
+		float top = 0.f - height;
+		float bottom = 600.f + height;
+		if (x < left)hp = 0;
+		if (x > right)hp = 0;
+		if (y < top) hp = 0;
+		if (y > bottom)hp = 0;
+	}
 };
 class bulletFactory
 {
@@ -376,29 +355,25 @@ public:
 	~bulletFactory(){}
 	static sprite* CreatBullet(wstring _id, vector2D _direction, float _x, float _y, bool _IsEnemy = false)
 	{
-		bullet* the = nullptr;
-		the = new bullet();
-		the->radius = 30.f;
-		the->id = _id;
-		if (the->id == L"bullet1")//普通子弹
+		sprite* the = nullptr;
+	
+		if (_id == L"bullet1")//普通子弹
 		{
-
+			the = new bullet();
+			the->id = _id;
 			the->MaxSpeed = 500;
-			the->acceleration = 10000;
-			the->attack = 100;
+			the->acceleration = 100000;
+			the->attack = 16;
 			the->direction = _direction;
 			the->Is_Enemy = _IsEnemy;
 			the->x = _x;
 			the->y = _y;
-			//根据起始半径修正x y
-			_direction.VectorToOne();
-			_direction*the->radius;
-			the->x += _direction.x;
-			the->y += _direction.y;
-			the->Is_NoAttack = false;
+			the->CantBeAttack = false;
 		}
-		else if (the->id == L"bullet2")//大圆子弹 速度慢 威力大
+		else if (_id == L"bullet2")//大圆子弹 速度慢 威力大
 		{
+			the = new bullet();
+			the->id = _id;
 			the->MaxSpeed = 100;
 			the->acceleration = 10000;
 			the->attack = 300;
@@ -406,12 +381,20 @@ public:
 			the->Is_Enemy = _IsEnemy;
 			the->x = _x;
 			the->y = _y;
-			//根据起始半径修正x y
-			_direction.VectorToOne();
-			_direction*the->radius;
-			the->x += _direction.x;
-			the->y += _direction.y;
-			the->Is_NoAttack = true;
+			the->CantBeAttack = true;
+		}
+		else if (_id == L"bullet3")//跟踪子弹 速度慢 威力大
+		{
+			the = new Tracking_bullet();
+			the->id = _id;
+			the->MaxSpeed = 1500;
+			the->acceleration = 15000;
+			the->attack = 100;
+			the->direction = _direction;
+			the->Is_Enemy = _IsEnemy;
+			the->x = _x;
+			the->y = _y;
+			the->CantBeAttack = false;
 		}
 		the->LoadResource();
 		return the;
@@ -431,7 +414,7 @@ public:
 		acceleration = 400;
 		direction = vector2D(dis(mt) - 1,0.5 );
 		Is_Enemy = true;
-		Is_NoAttack = false;
+		CantBeAttack = false;
 		LoadResource();
 	}	
 	~Enemy1(){}
@@ -519,5 +502,231 @@ public:
 		}
 		if (y < top) hp = 0;
 		if (y > bottom)hp = 0;
+	}
+};
+class Enemy2 :public sprite
+{
+public:
+	static float anchor_x;
+	static float anchor_y;
+	static float init_x;
+	static float init_y;
+	static bool isclockwise;
+	Enemy2()
+	{
+		id = L"enemy2";
+		LoadResource();
+	}
+	//第一阶段 从(300,0)往左或者往右画圆 第二阶段 接着往右或者往左
+	static void GroupAction(vector<sprite*>& sprite_List, float deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_int_distribution<> dis(0, 1);
+		static int Number_Of_Create = 5;
+		static sprite* last = nullptr;	
+		static int stage = 1;
+		if(stage==1)//第一阶段
+		{
+			if(Number_Of_Create==5)//第一阶段初始
+			{
+				if (!isTimeToCreate_Group(deltatime))return;
+				isclockwise = dis(mt);
+				if(isclockwise)//left
+				{
+					anchor_x = 0;
+				}
+				else
+				{
+					anchor_x = 600;
+				}
+				init_x = 300; init_y = 0;
+				anchor_y = 0;		
+			}
+			if (Number_Of_Create == 0)//第一阶段 等待结束
+			{
+				if(last->hp<=0)//第一阶段结束
+				{
+					Number_Of_Create = 5;
+					last = nullptr;
+					stage = 2;
+				}
+				return;
+			}
+			if(isTimeToCreate_One(deltatime))//第一阶段进行
+			{
+				sprite* temp = new Enemy2();
+				temp->x = init_x; temp->y = init_y;
+				sprite_List.push_back(temp);
+				Number_Of_Create--;
+				if (Number_Of_Create == 0)
+					last = temp;
+			}
+		}
+		else if(stage==2)//第二阶段
+		{
+ 			if (Number_Of_Create == 5)//第二阶段初始
+			{
+				if (isclockwise)//left
+				{
+					anchor_x = 0;
+					init_x = 0;
+				}
+				else
+				{
+					init_x = 600;
+					anchor_x= 600;
+				}
+				init_y = 300;
+				anchor_y = 600;
+			}
+			if(Number_Of_Create==0)//第二阶段等待
+			{
+				if (last->hp <= 0)//第二阶段结束
+				{
+					Number_Of_Create = 5;
+					stage = 1;
+					last = nullptr;
+				}
+				return;
+			}
+			if (isTimeToCreate_One(deltatime))//第二阶段进行
+			{
+				sprite* temp = new Enemy2();
+				temp->x = init_x; temp->y = init_y;
+				sprite_List.push_back(temp);
+				Number_Of_Create--;
+				if (Number_Of_Create == 0)
+					last = temp;
+			}
+		}
+
+	}
+	static bool isTimeToCreate_One(float deltatime)
+	{
+		float time = 0.2f;
+		static float time_interval = time;
+		if (time_interval >= time)
+		{
+			time_interval = 0;
+			return true;
+		}
+		else
+		{
+			time_interval += deltatime;
+			return false;
+		}
+	}
+	static bool isTimeToCreate_Group(float deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_real_distribution<> dis(0, 20);
+		float time = dis(mt);//dis(mt);
+		static	float time_interval=time;
+		if (time_interval >= time)
+		{
+			time_interval = 0;
+			return true;
+		}
+		else
+		{
+			time_interval += deltatime;
+			return false;
+		}
+	}
+	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
+	{
+		vector2D temp = vector2D(x - anchor_x, y - anchor_y);
+		temp.VectorToOne();
+		float angle = temp.VecoterToAngle();
+		float angle_add = DeltaTime*(180/3.1415926);
+		if (!isclockwise)
+			angle_add = -angle_add;
+		float speed_angle;
+		angle = fmodf((angle + angle_add + 359), 359);
+		speed_angle = fmodf(angle + 90,359);
+		if(!isclockwise)
+			speed_angle = fmodf(angle - 90, 359);
+		temp = vector2D::AngleToVector(angle);
+		temp*300;
+		x = temp.x + anchor_x;
+		y = temp.y + anchor_y;
+		speed = vector2D::AngleToVector(speed_angle);
+
+		float left = 0.f - width;
+		float right = 600.f + width;
+		float top = 0.f - height;
+		float bottom = 600.f + height;
+		if (x < left)
+			hp = 0;
+		if (x > right)
+			hp = 0;
+		if (y < top) 
+			hp = 0;
+		if (y > bottom)
+			hp = 0;
+	}
+
+};
+class cloud:sprite
+{
+public:
+
+	void action(vector<sprite*>&sprite_List, float DeltaTime, int keydown)
+	{
+	
+		sprite::action(sprite_List, DeltaTime, keydown);
+		float left = 0.f - width;
+		float right = 600.f + width;
+		float top = 0.f - height;
+		float bottom = 600.f + height;
+		if (x < left)
+			hp = 0;
+		if (x > right)
+			hp = 0;
+		if (y < top)
+			hp = 0;
+		if (y > bottom)
+			hp = 0;
+	}
+	static bool isTimeToCreate_One(float deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_real_distribution<> dis(0, 2.5);
+		static float time = dis(mt);
+		static float time_interval = time;
+		if (time_interval >= time)
+		{
+			time_interval = 0;
+			time = dis(mt);
+			return true;
+		}
+		else
+		{
+			time_interval += deltatime;
+			return false;
+		}
+	}
+	static void GroupAction(vector<sprite*>& sprite_List, float deltatime)
+	{
+		std::random_device rd;
+		std::mt19937 mt(rd());
+		std::uniform_real_distribution<> dis(0.2, 0.5);
+		std::uniform_int_distribution<> dis2(0, 600);
+		if (!isTimeToCreate_One(deltatime))return;
+		float scaling_factor = dis(mt);
+		sprite* temp = new cloud();
+		temp->speed;
+		temp->MaxSpeed = 300;
+		temp->direction = vector2D(0, 1);
+		temp->acceleration = 10000;
+		temp->id = L"cloud";
+		temp->y = 0; temp->x = dis2(mt);
+		temp->LoadResource();
+		temp->width *=scaling_factor;
+		temp->height *=scaling_factor;
+		sprite_List.push_back(temp);
 	}
 };

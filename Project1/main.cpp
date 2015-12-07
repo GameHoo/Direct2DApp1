@@ -12,8 +12,7 @@ using namespace std;
 //函数声明
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void shoot(sprite* the, Shoot_Info info, vector<sprite*>::iterator& i);
-bool attackTest(sprite* target1, sprite* target2);
-bool IsEnemy(sprite* target1, sprite* target2);
+void attackTest(sprite* target1, sprite* target2);
 void CalculateFPS();
 void Render();
 void Update(float Delta);
@@ -30,8 +29,14 @@ GameTimer theTimer;
 vector<sprite*> sprite_List;
 bool isRun = true;
 ID2D1RenderTarget* RenderTarget;
-map<wstring, IWICFormatConverter*> temp;
-map<wstring, IWICFormatConverter*> &sprite::Resource = temp;
+map<wstring, BMP_Info> temp;
+map<wstring, BMP_Info> &sprite::Resource = temp;
+float Enemy2::anchor_x;
+float Enemy2::anchor_y;
+float Enemy2::init_x;
+float Enemy2::init_y;
+bool Enemy2::isclockwise;
+
 //////////////////////////////////////////////////////////////////////////////////////////
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -86,7 +91,14 @@ void Update(float deltatime)
 	{
 		keydown += 8;
 	}	
-	
+	//attack test
+	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end(); i++)
+	{
+		for (vector<sprite*>::iterator j = i; j != sprite_List.end(); j++)
+		{
+			attackTest(*i, *j);
+		}
+	}
 	for (vector<sprite*>::iterator i=sprite_List.begin(); i !=sprite_List.end();i=i+1)
 	{
 		sprite* the = *i;
@@ -96,14 +108,17 @@ void Update(float deltatime)
 	}
 	//Group Action
 	Enemy1::GroupAction(sprite_List, theTimer.DeltaTime());
+	Enemy2::GroupAction(sprite_List, theTimer.DeltaTime());
+	cloud::GroupAction(sprite_List, theTimer.DeltaTime());
 	//删除HP=0的精灵
 	for (vector<sprite*>::iterator i = sprite_List.begin()+1; i != sprite_List.end();)
 	{
 		sprite* temp = *i;
-		if(temp->IsDead())
+		if(temp->hp<=0)
 		{
 			delete temp;
 			i = sprite_List.erase(i);
+			temp = nullptr;
 		}
 		else
 		{
@@ -112,28 +127,35 @@ void Update(float deltatime)
 	}
 }
 //碰撞检测
-bool attackTest(sprite* target1,sprite* target2)
+void attackTest(sprite* target1,sprite* target2)
 {
+	if (target1->id == L"bkg1" || target2->id == L"bkg1" || target1->id == L"bkg2" || target2->id == L"bkg2")return;
 	if ((target1->width / 2 + target2->width / 2) > fabs(target1->x - target2->x) && (target1->height / 2 + target2->height / 2) > fabs(target1->y - target2->y))
 	{
-		return true;
+		if(target1->Is_Enemy!=target2->Is_Enemy)
+		{
+		if (!target1->CantBeAttack)target1->hp -= target2->attack;
+		if (!target2->CantBeAttack)target2->hp -= target1->attack; 
+		}
 	}
-	return false;
 }
-bool IsEnemy(sprite* target1,sprite* target2)
-{
-	return target1->Is_Enemy != target2->Is_Enemy;
-}
+
 void Render()
 {
+
+	
 	ID2D1SolidColorBrush *brush1;
 	RenderTarget->CreateSolidColorBrush(
 		D2D1::ColorF(D2D1::ColorF(0xececee)),
 		&brush1
 		);
 	RenderTarget->BeginDraw();
-	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0xacd0ce)));
+
+	RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0xeeeeee)));
+
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+	
+	
 	//画出每个精灵
 	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end(); i++)
 	{
@@ -177,13 +199,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
-			theTimer.Stop();
-			isRun = false;
+			/*theTimer.Stop();
+			isRun = false;*/
 		}
 		else
 		{
-			theTimer.Start();
-			isRun = true;
+			/*theTimer.Start();
+			isRun = true;*/
 		}
 	}
 	break;
@@ -214,14 +236,14 @@ void DrawSprit(sprite* the)
 	float x = the->x;
 	float y = the->y;
 	float angle = the->getAngle();
-	if(BMP_STORE.find(sprite::Resource[the->id])==BMP_STORE.end())
+	if(BMP_STORE.find(sprite::Resource[the->id].Converter)==BMP_STORE.end())
 	{
-		RenderTarget->CreateBitmapFromWicBitmap(sprite::Resource[the->id], nullptr, &pbitmap);
-		BMP_STORE[sprite::Resource[the->id]] = pbitmap;
+		RenderTarget->CreateBitmapFromWicBitmap(sprite::Resource[the->id].Converter, nullptr, &pbitmap);
+		BMP_STORE[sprite::Resource[the->id].Converter] = pbitmap;
 	}
 	else
 	{
-		pbitmap = BMP_STORE[sprite::Resource[the->id]];
+		pbitmap = BMP_STORE[sprite::Resource[the->id].Converter];
 	}
 	RenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(
 		angle,
@@ -282,8 +304,52 @@ void shoot(sprite* the, Shoot_Info info,vector<sprite*>::iterator& i)
 			add += angle_add;
 		}
 	}
-	else
+	else//平行
 	{
+		int bullet_high = -5;
+		int bullet_high_add = 7;
+		int bullet_blanking_add = 10;
+		int bullet_blanking=10;
+		int radius = 30;
+		if (info.Shoot_number & 1) //奇数 中间发射子弹
+		{
+			sprite* a_bullet = bulletFactory::CreatBullet(L"bullet1", vector2D::AngleToVector(the->getAngle()), the->x, the->y -radius + bullet_high, the->Is_Enemy);
+			i = sprite_List.insert(i + 1, a_bullet);
+			info.Shoot_number--;
+			bullet_high += bullet_high_add;
+		}
+		while (info.Shoot_number)
+		{
+			//left
+			sprite* a_bullet = bulletFactory::CreatBullet(L"bullet1", vector2D::AngleToVector(the->getAngle()), the->x-bullet_blanking, the->y - radius+bullet_high, the->Is_Enemy);
+			i = sprite_List.insert(i + 1, a_bullet);
+			info.Shoot_number--;
+			//right
+			a_bullet = bulletFactory::CreatBullet(L"bullet1", vector2D::AngleToVector(the->getAngle()), the->x+bullet_blanking, the->y - radius + bullet_high, the->Is_Enemy);
+			i = sprite_List.insert(i + 1, a_bullet);
+			info.Shoot_number--;
 
+			bullet_blanking += bullet_blanking_add;
+			bullet_high += bullet_high_add;
+		}
+
+	}
+	if(info.Have_FollowBullet)
+	{
+		float time = 0.7f;
+		static	float interval_time = 0.7f;
+		if(interval_time>=time)
+		{
+			interval_time = 0;
+			sprite* a_bullet = bulletFactory::CreatBullet(L"bullet3", vector2D::AngleToVector(the->getAngle()), the->x + 25, the->y - 20, the->Is_Enemy);
+			i = sprite_List.insert(i + 1, a_bullet);
+			a_bullet = bulletFactory::CreatBullet(L"bullet3", vector2D::AngleToVector(the->getAngle()), the->x - 25, the->y - 20, the->Is_Enemy);
+			i = sprite_List.insert(i + 1, a_bullet);
+		}
+		else
+		{
+			interval_time += theTimer.DeltaTime();
+		}
+		
 	}
 }

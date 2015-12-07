@@ -21,9 +21,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HGWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GameTimer.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -43,7 +40,13 @@
     <Image Include="file\bullet2.png">
       <Filter>file</Filter>
     </Image>
+    <Image Include="file\bullet3.png">
+      <Filter>file</Filter>
+    </Image>
     <Image Include="file\enemy1.png">
+      <Filter>file</Filter>
+    </Image>
+    <Image Include="file\enemy2.png">
       <Filter>file</Filter>
     </Image>
     <Image Include="file\player.png">

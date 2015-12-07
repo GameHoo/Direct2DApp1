@@ -23,8 +23,8 @@ public:
 	}
 	bool isTimeToShoot(float deltatime)
 	{
-		
-		//ÀÛ¼ÆÊ±¼ä
+
+		//ï¿½Û¼ï¿½Ê±ï¿½ï¿½
 		static float time = 0;
 		srand(time);
 		if (time >= 5.f)
@@ -41,7 +41,7 @@ public:
 	void action(vector<Spirit*>& Spirit_List, vector<Spirit*>::iterator &i,float DeltaTime)
 	{
 		Spirit::action(Spirit_List,DeltaTime);
-		//ÒÆ¶¯·¶Î§ÏÞÖÆ
+		//ï¿½Æ¶ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½
 		float left = 0.f - size.width / 2;
 		float right = 600.f + size.width / 2;
 		float top = 0.f - size.height / 2;
@@ -50,7 +50,7 @@ public:
 		if (x > right)hp = 0;
 		if (y < top) hp = 0;
 		if (y > bottom)hp = 0;
-		//·¢Éä×Óµ¯
+		//ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½
 		if (isTimeToShoot(DeltaTime))
 		{
 			Spirit* temp = new Bullet1(x, y,vector2D(0,1),false);
