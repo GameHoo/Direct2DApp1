@@ -111,14 +111,16 @@ void Update(float deltatime)
 	Enemy2::GroupAction(sprite_List, theTimer.DeltaTime());
 	cloud::GroupAction(sprite_List, theTimer.DeltaTime());
 	//É¾³ýHP=0µÄ¾«Áé
-	for (vector<sprite*>::iterator i = sprite_List.begin()+1; i != sprite_List.end();)
+	for (vector<sprite*>::iterator i = sprite_List.begin(); i != sprite_List.end();)
 	{
 		sprite* temp = *i;
 		if(temp->hp<=0)
 		{
+			
 			delete temp;
 			i = sprite_List.erase(i);
 			temp = nullptr;
+
 		}
 		else
 		{
@@ -199,13 +201,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
-			/*theTimer.Stop();
-			isRun = false;*/
+			theTimer.Stop();
+			isRun = false;
 		}
 		else
 		{
-			/*theTimer.Start();
-			isRun = true;*/
+			theTimer.Start();
+			isRun = true;
 		}
 	}
 	break;

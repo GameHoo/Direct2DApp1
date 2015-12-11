@@ -219,6 +219,7 @@ public:
 		attack = 1000;
 		Is_Enemy = false;
 		id = L"player";		
+		CantBeAttack = false;
 		LoadResource();
 	}
 	~player(){}
@@ -423,7 +424,7 @@ public:
 		if (isTimeToShoot(deltatime))
 		{
 			info.Have_FollowBullet=false;
-			info.Shoot_number = 1;
+			info.Shoot_number = 5;
 			info.Shoot_Style = 0;
 			return true;
 		}
@@ -516,6 +517,8 @@ public:
 	{
 		id = L"enemy2";
 		LoadResource();
+		CantBeAttack = false;
+		Is_Enemy = true;
 	}
 	//第一阶段 从(300,0)往左或者往右画圆 第二阶段 接着往右或者往左
 	static void GroupAction(vector<sprite*>& sprite_List, float deltatime)
